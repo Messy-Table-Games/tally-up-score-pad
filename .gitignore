@@ -1,0 +1,53 @@
+## editors
+/.idea
+/.vscode
+
+## system files
+.DS_Store
+
+## npm
+node_modules/
+npm-debug.log
+
+## testing
+coverage/
+
+## temp folders
+.tmp/
+
+# build
+dist/
+build/
+
+storybook-static
+custom-elements.json
+
+# Xcode
+xcuserdata/
+
+**/*.xcodeproj/project.xcworkspace/*
+!**/*.xcodeproj/project.xcworkspace/xcshareddata
+
+**/*.xcodeproj/project.xcworkspace/xcshareddata/*
+!**/*.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+**/*.playground/playground.xcworkspace/*
+!**/*.playground/playground.xcworkspace/xcshareddata
+
+**/*.playground/playground.xcworkspace/xcshareddata/*
+!**/*.playground/playground.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+.build/
+
+.firebaserc
+.firebase/
+ui-debug.log
+firebase-debug.log
+
+*storybook.log
+
+untracked/

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Tally Up Score Pad">
+  <meta property="og:title" content="Tally Up Score Pad">
+  <meta property="og:type" content="website">
+  <meta property="og:description" content="Helps keep score for Tally Up">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="Icon-180x180.png">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#31333a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tally Up Score Pad">
+  
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      overflow: hidden;
+      height: 100%;
+      background: white;
+    }
+
+    body {
+      position: relative;
+    }
+  </style>
+  <title>Tally Up Score Pad</title>
+  <!-- Webpack will inject the script tag -->
+</head>
+
+<body>
+  <app-view></app-view>
+  <!-- 100% privacy-first analytics -->
+  <% if (APP_ENV === 'production') { %>
+  <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+  <% } %>
+</body>
+
+</html>
