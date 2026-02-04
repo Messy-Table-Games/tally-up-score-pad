@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { AppState } from './model.js';
 import './score-pad.js';
 import './player-modals.js';
+import './confirm-dialog.js';
 import { LogEvent } from './log-event.js';
 
 class AppView extends LitElement {
@@ -56,6 +57,7 @@ class AppView extends LitElement {
     this.editingPlayer = null;
     this.tempPlayerName = '';
     this.tempPlayerScore = 0;
+    this._confirmDialogOpen = false;
   }
 
   connectedCallback() {
@@ -119,6 +121,8 @@ class AppView extends LitElement {
         .player=${this.editingPlayer}
         .tempScore=${this.tempPlayerScore}
       ></player-score-modal>
+
+      <confirm-dialog id="confirm-dialog"></confirm-dialog>
     `;
   }
 
@@ -135,15 +139,34 @@ class AppView extends LitElement {
     }
   }
 
-  _onUndo() {
+  async _onUndo() {
+    if (this._confirmDialogOpen) return;
+
     const undoConfirmationMessage = this.appState.undoConfirmationMessage;
     const message = undoConfirmationMessage 
       ? `${undoConfirmationMessage}`
       : 'Do you want to undo the last action?';
-    
-    if (confirm(message)) {
-      LogEvent('undo_click');
-      this.appState.undo();
+
+    const dialog = this.renderRoot?.querySelector('#confirm-dialog');
+    if (!dialog) return;
+
+    this._confirmDialogOpen = true;
+    try {
+      const confirmed = await dialog.show({
+        title: '',
+        message,
+        confirmLabel: 'Undo',
+        cancelLabel: 'Cancel',
+        variant: 'primary',
+        showCancel: true,
+      });
+
+      if (confirmed) {
+        LogEvent('undo_click');
+        this.appState.undo();
+      }
+    } finally {
+      this._confirmDialogOpen = false;
     }
   }
 
@@ -151,11 +174,30 @@ class AppView extends LitElement {
     this.appState.redo();
   }
 
-  _onReset() {
-   if (confirm(`Are you sure you want to clear the game scores? This cannot be undone.`)) {
-    this.appState.clear();
-    LogEvent('reset_click');
-   }
+  async _onReset() {
+    if (this._confirmDialogOpen) return;
+
+    const dialog = this.renderRoot?.querySelector('#confirm-dialog');
+    if (!dialog) return;
+
+    this._confirmDialogOpen = true;
+    try {
+      const confirmed = await dialog.show({
+        title: '',
+        message: 'Are you sure you want to clear the game scores? This cannot be undone.',
+        confirmLabel: 'Clear Scores',
+        cancelLabel: 'Cancel',
+        variant: 'danger',
+        showCancel: true,
+      });
+
+      if (confirmed) {
+        this.appState.clear();
+        LogEvent('reset_click');
+      }
+    } finally {
+      this._confirmDialogOpen = false;
+    }
   }
 
   _onAddPlayer() {

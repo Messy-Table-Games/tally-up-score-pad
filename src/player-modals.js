@@ -9,6 +9,9 @@ class PlayerOptionsModal extends LitElement {
   };
 
   static styles = css`
+    modal-dialog {
+      --modal-max-width: 694px;
+    }
     .modal-content {
       display: flex;
       flex-direction: column;
@@ -54,9 +57,12 @@ class PlayerOptionsModal extends LitElement {
       .modal-buttons {
         flex-direction: column;
         align-items: center;
+        width: max-content;
+        margin-left: auto;
+        margin-right: auto;
       }
       .modal-buttons button {
-        width: 180px;
+        width: 100%;
       }
       /* Override order for column layout: Cancel, Save, Delete */
       .modal-buttons .primary {
@@ -119,7 +125,7 @@ class PlayerOptionsModal extends LitElement {
 
   getTitle() {
     // Subclasses should override this
-    return "Player Options";
+    return "";
   }
 
   renderContent() {
@@ -155,11 +161,13 @@ class PlayerNameModal extends PlayerOptionsModal {
   static properties = {
     ...super.properties,
     tempName: { type: String },
+    confirmDelete: { type: Boolean },
   };
 
   constructor() {
     super();
     this.tempName = '';
+    this.confirmDelete = false;
   }
 
   getInputSelector() {
@@ -167,7 +175,7 @@ class PlayerNameModal extends PlayerOptionsModal {
   }
 
   getTitle() {
-    return "Change Name";
+    return "";
   }
 
   renderContent() {
@@ -183,9 +191,16 @@ class PlayerNameModal extends PlayerOptionsModal {
         />
       </div>
       <div class="modal-buttons">
-        <button class="secondary" @click=${this._onClose}>Cancel</button>
-        <button class="primary" @click=${this._onSave}>Save Changes</button>
-        <button class="danger" @click=${this._onDelete}>Delete Player</button>
+        ${this.confirmDelete
+          ? html`
+              <button class="secondary" @click=${this._onCancelDelete}>Cancel</button>
+              <button class="danger" @click=${this._onConfirmDelete}>Confirm Delete</button>
+            `
+          : html`
+              <button class="secondary" @click=${this._onClose}>Cancel</button>
+              <button class="primary" @click=${this._onSave}>Save Changes</button>
+              <button class="danger" @click=${this._onDelete}>Delete Player</button>
+            `}
       </div>
     `;
   }
@@ -198,19 +213,30 @@ class PlayerNameModal extends PlayerOptionsModal {
     if (e.key === 'Enter') {
       this._onSave();
     } else if (e.key === 'Escape') {
-      this._onClose();
+      if (this.confirmDelete) {
+        this._onCancelDelete();
+      } else {
+        this._onClose();
+      }
     }
   }
 
   _onDelete() {
-    if (this.player && confirm(`Are you sure you want to delete "${this.player.name}"?`)) {
-      this.dispatchEvent(new CustomEvent('player-delete', {
-        detail: { playerId: this.player.id },
-        bubbles: true,
-        composed: true,
-      }));
-      this._onClose();
-    }
+    this.confirmDelete = true;
+  }
+
+  _onCancelDelete() {
+    this.confirmDelete = false;
+  }
+
+  _onConfirmDelete() {
+    if (!this.player) return;
+    this.dispatchEvent(new CustomEvent('player-delete', {
+      detail: { playerId: this.player.id },
+      bubbles: true,
+      composed: true,
+    }));
+    this._onClose();
   }
 
   _onSave() {
@@ -226,6 +252,7 @@ class PlayerNameModal extends PlayerOptionsModal {
   }
 
   _onClose() {
+    this.confirmDelete = false;
     this.dispatchEvent(new CustomEvent('player-name-close', {
       bubbles: true,
       composed: true,
@@ -250,13 +277,13 @@ class PlayerScoreModal extends PlayerOptionsModal {
   }
 
   getTitle() {
-    return "Change Score";
+    return "";
   }
 
   renderContent() {
     return html`
       <div>  
-        <label>Score:</label>
+        <label>Player Score:</label>
         <input 
           type="number" 
           class="score-input"

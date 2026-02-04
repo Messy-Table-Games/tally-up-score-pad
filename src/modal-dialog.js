@@ -3,7 +3,8 @@ import { LitElement, html, css } from 'lit';
 class ModalDialog extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
-    title: { type: String }
+    title: { type: String },
+    mfs: { type: Boolean, reflect: true }
   };
 
   static styles = css`
@@ -11,7 +12,7 @@ class ModalDialog extends LitElement {
       padding: 0;
       border: none;
       border-radius: 12px;
-      max-width: 90vw;
+      max-width: min(90vw, var(--modal-max-width, 90vw));
       max-height: 90vh;
       width: 100%;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -39,6 +40,7 @@ class ModalDialog extends LitElement {
 
     .modal-header h2 {
       margin: 0;
+      padding-left: 4px;
       font-size: 1rem;
       font-weight: bold;
     }
@@ -48,13 +50,13 @@ class ModalDialog extends LitElement {
       border: none;
       font-size: 24px;
       cursor: pointer;
-      padding: 4px;
+      padding: 0 0 0 4px;
       border-radius: 4px;
       min-height: 44px; /* iOS touch target minimum */
       min-width: 44px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       transition: background-color 0.2s;
     }
 
@@ -73,16 +75,15 @@ class ModalDialog extends LitElement {
 
     /* Mobile-specific optimizations */
     @media (max-width: 768px) {
-      dialog {
+      :host([mfs]) dialog {
         margin: 0;
         max-width: 100vw;
         max-height: 100vh;
         border-radius: 0;
       }
-      
-      .modal-content {
+
+      :host([mfs]) .modal-content {
         min-height: 100vh;
-        padding: env(safe-area-inset-top, 20px) 20px env(safe-area-inset-bottom, 20px);
       }
     }
   `;
@@ -95,6 +96,7 @@ class ModalDialog extends LitElement {
     super();
     this.open = false;
     this.title = '';
+    this.mfs = true;
   }
 
   connectedCallback() {
@@ -127,13 +129,18 @@ class ModalDialog extends LitElement {
   }
 
   render() {
+    const showHeader = Boolean(this.title && this.title.trim());
     return html`
       <dialog @click=${this._onBackdropClick} @close=${this._onClose}>
         <div class="modal-content" @click=${this._stopPropagation}>
-          <div class="modal-header">
-            <h2>${this.title}</h2>
-            <button class="close-button" @click=${this.close} aria-label="Close">×</button>
-          </div>
+          ${showHeader
+            ? html`
+                <div class="modal-header">
+                  <h2>${this.title}</h2>
+                  <button class="close-button" @click=${this.close} aria-label="Close">×</button>
+                </div>
+              `
+            : null}
           <div class="modal-body">
             <slot></slot>
           </div>
