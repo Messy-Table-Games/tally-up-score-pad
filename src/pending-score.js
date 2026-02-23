@@ -5,13 +5,14 @@ import { ComputePendingRollScore } from './model.js';
 export class PendingScore extends LitElement {
   static properties = {
     game: { type: Object },
-    _rolls: { type: Array }
+    _rolls: { type: Array },
+    _rollsToDraw: { type: Array }
   }
 
   static styles = css`
     :host {
       box-sizing: border-box;
-      height: 34.5px;
+      height: 34px;
       font-size: 16px;
       min-width: 100%;
     }
@@ -73,7 +74,17 @@ export class PendingScore extends LitElement {
       display: flex;
       gap: 0px;
       justify-content: flex-end;
-      will-change: transform;
+    }
+
+    #hiddenRolls {
+      position: absolute;
+      visibility: hidden;
+      pointer-events: none;
+      left: 0;
+      top: 0;
+      display: flex;
+      gap: 0px;
+      white-space: nowrap;
     }
 
     .sum {
@@ -82,8 +93,9 @@ export class PendingScore extends LitElement {
       width: 100%;
       overflow: hidden;
       font-weight: bold;
-      align-content: center;
-      text-align: right;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
       padding: 0 6px 0 0;
       border: 2px solid #e1e1e1;
       border-radius: 6px;
@@ -96,12 +108,13 @@ export class PendingScore extends LitElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0px 4px;
+      padding: 0px 6px;
       margin-right: 4px;
       border: 1px solid #444;
       border-radius: 4px;
       background: #fff;
-      color: #222;
+      color: #333;
+      height: 20px;
     }
   `;
 
@@ -109,32 +122,37 @@ export class PendingScore extends LitElement {
     super();
     this.game = null;
     this._rolls = [];
+    this._rollsToDraw = [];
     this._disposeAutorun = null;
     this._animationTimeout = null;
+    this._resizeObserver = null;
+    this._boundHandleTouchStart = this._handleTouchStart.bind(this);
+    this._boundHandleTouchEnd = this._handleTouchEnd.bind(this);
   }
 
   connectedCallback() {
     super.connectedCallback();
+    let connecting = true;
+    this._resizeObserver = new ResizeObserver(() => this._onResize());
+    this._resizeObserver.observe(this);
+    
     this._disposeAutorun = autorun(() => {
       if (this.game) {
         const currentLength = this.game.rolls.length;
         
-        // Check if new rolls were added
-        if (currentLength > this._rolls.length) {
+        if (connecting && this._rolls.length === 0) {
+          this._rolls = [...this.game.rolls];
+          this._setRollsToDraw(this._rolls.length);
+          connecting = false;
+        } 
+        else if (currentLength > this._rolls.length) {
           const rollsAdded = currentLength - this._rolls.length;
           this._rolls = [...this.game.rolls];
-          // Use requestAnimationFrame to ensure DOM is updated
-          requestAnimationFrame(() => {
-            this._animateNewRolls(rollsAdded);
-          });
-        }
-        // Check if rolls were removed (undo)
+          this._animateNewRolls(rollsAdded);
+        } 
         else if (currentLength < this._rolls.length) {
           const rollsRemoved = this._rolls.length - currentLength;
-          // Use requestAnimationFrame to ensure DOM is updated
-          requestAnimationFrame(() => {
-            this._animateRemovedRolls(rollsRemoved);
-          });
+          this._animateRemovedRolls(rollsRemoved);
         }
 
         this.game.rolls;
@@ -143,11 +161,15 @@ export class PendingScore extends LitElement {
     });
     
     // Prevent double tap zoom (touch-action manipulation does not work in this element for some reason)
-    this.addEventListener('touchstart', this._handleTouchStart.bind(this), { passive: false });
-    this.addEventListener('touchend', this._handleTouchEnd.bind(this), { passive: false });
+    this.addEventListener('touchstart', this._boundHandleTouchStart, { passive: false });
+    this.addEventListener('touchend', this._boundHandleTouchEnd, { passive: false });
   }
 
   disconnectedCallback() {
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
     if (this._disposeAutorun) {
       this._disposeAutorun();
       this._disposeAutorun = null;
@@ -156,8 +178,8 @@ export class PendingScore extends LitElement {
       clearTimeout(this._animationTimeout);
       this._animationTimeout = null;
     }
-    this.removeEventListener('touchstart', this._handleTouchStart);
-    this.removeEventListener('touchend', this._handleTouchEnd);
+    this.removeEventListener('touchstart', this._boundHandleTouchStart);
+    this.removeEventListener('touchend', this._boundHandleTouchEnd);
     super.disconnectedCallback();
   }
 
@@ -171,62 +193,109 @@ export class PendingScore extends LitElement {
     event.preventDefault();
   }
 
-  get sum() {
-    //const rollsArr = this.game && Array.isArray(this.game.rolls) ? this.game.rolls : [];
-    return ComputePendingRollScore(this.game.rolls);
+  _onResize() {
+    if (!this.shadowRoot) return;
+
+    const rollsDiv = this.shadowRoot.querySelector('.rolls');
+    if (!rollsDiv) return;
+
+    const numPillsThatFit = this._computeNumPillsThatFit(rollsDiv.offsetWidth);
+    if (this._rollsToDraw.length != numPillsThatFit) {
+      this._setRollsToDraw(numPillsThatFit);
+    }
   }
 
-  _animateNewRolls(rollsAdded) {
-    const rollsContainer = this.shadowRoot.querySelector('.rolls-container');
-    const rollsDiv = this.shadowRoot.querySelector('.rolls');
-    
-    if (!rollsContainer || !rollsDiv) return;
-    
-    // Calculate total width of all new pills
-    let totalWidth = 0;
-    const pills = rollsDiv.querySelectorAll('.pill');
-    
-    // Get width of the newly added pills (they are at the end)
-    for (let i = pills.length - 1; i >= pills.length - rollsAdded; i--) {
-      const pill = pills[i];
-      const pillStyles = getComputedStyle(pill);
-      totalWidth += pill.offsetWidth + 
-        parseFloat(pillStyles.marginLeft || 0) + 
-        parseFloat(pillStyles.marginRight || 0);
+  _setRollsToDraw(numRolls) {
+    this._rollsToDraw = this._rolls.slice(-numRolls);
+  }
+
+  get sum() {
+    return ComputePendingRollScore(this.game?.rolls || []);
+  }
+
+  _computePillWidth(pill) {
+    // const pillStyles = getComputedStyle(pill);
+    // return pill.offsetWidth + 
+    //     parseFloat(pillStyles.marginLeft || 0) + 
+    //     parseFloat(pillStyles.marginRight || 0);
+    return pill.offsetWidth + 4; // Avoids getComputedStyle and must match margin in .pill CSS
+  }
+
+  _computeNumPillsThatFit(widthToFit) {
+    const hiddenRollsDiv = this.shadowRoot.querySelector('#hiddenRolls');
+    if (!hiddenRollsDiv) return 0;
+
+    const pills = hiddenRollsDiv.querySelectorAll('.pill');
+    let pillsWidth = 0;
+    let numPillsThatFit = 0;
+    for (let i = pills.length - 1; i >= 0; i--) {
+      pillsWidth += this._computePillWidth(pills[i]);
+
+      numPillsThatFit++;
+      if (pillsWidth > widthToFit) {
+        break;
+      }
     }
-    
-    // Add gap width between pills (except for the last one)
-    // if (rollsAdded > 0) {
-    //   totalWidth += (rollsAdded - 1) * 2; // 2px gap between pills
-    // }
-    
-    if (totalWidth === 0) return;
+
+    return numPillsThatFit;
+  }
+
+  _computeWidthOfEndPills(numPills) {
+    const hiddenRollsDiv = this.shadowRoot.querySelector('#hiddenRolls');
+    if (!hiddenRollsDiv) return 0;
+
+    const pills = hiddenRollsDiv.querySelectorAll('.pill');
+    let pillsWidth = 0;
+    let endIndex = Math.max(pills.length - numPills, 0);
+    for (let i = pills.length - 1; i >= endIndex; i--) {
+      pillsWidth += this._computePillWidth(pills[i]);
+    }
+
+    return pillsWidth;
+  }
+
+  _getElementXTransform(element) {
+    const currentTransform = getComputedStyle(element).transform;
+    let elementXTransform = 0;
+    if (currentTransform && currentTransform !== 'none') {
+      const matrix = new DOMMatrix(currentTransform);
+      elementXTransform = matrix.m41; // Get the X translation value
+    }
+    return elementXTransform;
+  }
+
+  async _animateNewRolls(rollsAdded) {
+    await this.updateComplete;
+    let newPillsWidth = this._computeWidthOfEndPills(rollsAdded)
+    if (newPillsWidth === 0) return;
     
     // Clear any existing animation timeout
     if (this._animationTimeout) {
       clearTimeout(this._animationTimeout);
       this._animationTimeout = null;
     }
-    
+
+    const rollsDiv = this.shadowRoot.querySelector('.rolls');
+
     // If there's an ongoing animation, get the current transform value
-    const currentTransform = getComputedStyle(rollsDiv).transform;
-    let currentX = 0;
-    if (currentTransform && currentTransform !== 'none') {
-      const matrix = new DOMMatrix(currentTransform);
-      currentX = matrix.m41; // Get the X translation value
-    }
+    let currentRollsXOffset = this._getElementXTransform(rollsDiv);
     
     // Calculate the new starting position
-    const newStartX = -currentX - totalWidth;
+    const rollsXOffset = currentRollsXOffset + newPillsWidth;
+    const rollsDivWidth = rollsDiv.offsetWidth;
+    const rollsWidthNeeded = rollsDivWidth + rollsXOffset;
+
+    const numPillsThatFit = this._computeNumPillsThatFit(rollsWidthNeeded);
+    this._setRollsToDraw(numPillsThatFit);
 
     // Apply the new offset immediately without transition
     rollsDiv.style.transition = 'none';
-    rollsDiv.style.transform = `translateX(${-newStartX}px)`;
+    rollsDiv.style.transform = `translateX(${rollsXOffset}px)`;
     
     // Force reflow
     rollsDiv.offsetHeight;
     
-    // Animate to show all new pills
+    // Animate sliding
     rollsDiv.style.transition = 'transform 0.3s ease-out';
     rollsDiv.style.transform = 'translateX(0)';
     
@@ -238,11 +307,10 @@ export class PendingScore extends LitElement {
     }, 300);
   }
 
-  _animateRemovedRolls(rollsRemoved) {
-    const rollsContainer = this.shadowRoot.querySelector('.rolls-container');
-    const rollsDiv = this.shadowRoot.querySelector('.rolls');
-    
-    if (!rollsContainer || !rollsDiv) return;
+  async _animateRemovedRolls(rollsRemoved) {
+    await this.updateComplete;
+    let removedPillsWidth = this._computeWidthOfEndPills(rollsRemoved)
+    if (removedPillsWidth === 0) return;
     
     // Clear any existing animation timeout
     if (this._animationTimeout) {
@@ -250,45 +318,30 @@ export class PendingScore extends LitElement {
       this._animationTimeout = null;
     }
 
-    let totalWidth = 0;
-    const pills = rollsDiv.querySelectorAll('.pill');
-    
-    // Check if pills is a valid NodeList or array-like object
-    if (!pills || typeof pills.length !== 'number' || pills.length === 0) return;
+    const rollsDiv = this.shadowRoot.querySelector('.rolls');
 
-    // Get width of the removed pills (they are at the end)
-    for (let i = pills.length - 1; i >= pills.length - rollsRemoved; i--) {
-      const pill = pills[i];
-      const pillStyles = getComputedStyle(pill);
-      totalWidth += pill.offsetWidth + 
-        parseFloat(pillStyles.marginLeft || 0) + 
-        parseFloat(pillStyles.marginRight || 0);
-    }
-    
-    if (totalWidth === 0) return;
-    
     // Get the current transform value if there's an ongoing animation
-    const currentTransform = getComputedStyle(rollsDiv).transform;
-    let currentX = 0;
-    if (currentTransform && currentTransform !== 'none') {
-      const matrix = new DOMMatrix(currentTransform);
-      currentX = matrix.m41; // Get the X translation value
-    }
+    let currentRollsXOffset = this._getElementXTransform(rollsDiv);
     
-    // For removal animation, we want to simulate the pills sliding left by the width of removed pills
+    // For removal animation, we want to simulate the pills sliding right by the width of removed pills
     // Start from a position that's offset to the right by the width of the removed pills
-    const startX = totalWidth;
+    const endX = removedPillsWidth;
+    const rollsDivWidth = rollsDiv.offsetWidth;
+    const rollsWidthNeeded = rollsDivWidth + removedPillsWidth;
+
+    let numPillsThatFit = this._computeNumPillsThatFit(rollsWidthNeeded);
+    this._setRollsToDraw(numPillsThatFit);
 
     // Apply the starting position immediately without transition
     rollsDiv.style.transition = 'none';
-    rollsDiv.style.transform = `translateX(${currentX}px)`;
+    rollsDiv.style.transform = `translateX(${currentRollsXOffset}px)`;
     
     // Force reflow
     rollsDiv.offsetHeight;
     
-    // Animate sliding to the left to the natural position
+    // Animate sliding
     rollsDiv.style.transition = 'transform 0.3s ease-out';
-    rollsDiv.style.transform = `translateX(${startX}px)`;
+    rollsDiv.style.transform = `translateX(${endX}px)`;
     
     // Clean up after animation and reset position
     this._animationTimeout = setTimeout(() => {
@@ -296,25 +349,28 @@ export class PendingScore extends LitElement {
       rollsDiv.style.transform = '';
       this._animationTimeout = null;
       this._rolls = [...this.game.rolls];
+      numPillsThatFit = this._computeNumPillsThatFit(rollsDiv.offsetWidth);
+      this._setRollsToDraw(numPillsThatFit);
     }, 300);
   }
 
   render() {
+    const rollsArr = this.game?.rolls || [];
+
     return html`
-      <div class="content">
-        <div class="rolls-container">
-          <div class="bg-text ${this.game.rolls.length > 0 ? 'hidden' : ''}" aria-hidden="true">Rolls</div>
+      <div class="content" role="region" aria-label="Pending score">
+        <div id="hiddenRolls" aria-hidden="true">
+          ${this._rolls.map((val) => html`<span class="pill">${val}</span>`)}
+        </div>
+        <div class="rolls-container" aria-label="Pending rolls">
+          <div class="bg-text ${rollsArr.length > 0 ? 'hidden' : ''}" aria-hidden="true">Rolls</div>
           <div class="roll-fade">
             <div class="rolls">
-              ${this._rolls.map((_, i, arr) => {
-                const idx = i;
-                const val = arr[idx];
-                return html`<span class="pill" key="${idx}">${val}</span>`;
-              })}
+              ${this._rollsToDraw.map((val) => html`<span class="pill">${val}</span>`)}
             </div>
           </div>
         </div>
-        <div class="sum">${this.sum}</div>
+        <div class="sum" aria-live="polite" aria-label="Total: ${this.sum}">${this.sum}</div>
       </div>
     `;
   }

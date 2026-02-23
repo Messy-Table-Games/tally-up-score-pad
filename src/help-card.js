@@ -89,6 +89,7 @@ export class HelpCard extends LitElement {
       <ul>
         <li>Tap the plus to add a player.</li>
         <li>Tap a player name to change the name or delete a player.</li>
+        <li>Tap on a player's score to manually change their score.</li>
         <li>Tap on a dice roll number in the button pad to add it to the running total.</li>
         <li>Tap the <b>IN/OUT</b> button for a player to change their status.</li>
         <li>Tap <b>Bust</b> when a bust occurs. <em>A bust occurs when 2 stars are rolled in the Main roll, or 2 or more stars are shown after the Up die roll.</em></li>
