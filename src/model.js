@@ -1,6 +1,7 @@
 import { makeAutoObservable, makeObservable, observable, action, computed } from 'mobx';
 
 const DEFAULT_STORAGE_KEY = 'TallyUpModel';
+const PLAYER_NAME_MAX_LENGTH = 50;
 
 /**
  * Persists JSON data to localStorage under the provided key.
@@ -55,8 +56,8 @@ function generateUUID() {
 }
 
 /**
- * Computes the total score from an array of dice rolls, handling special values like 'x2' and 'bust'
- * @param {Array} rolls - Array of roll values (numbers, 'x2', or 'bust')
+ * Computes the total score from an array of dice rolls, handling special values like 'x2'
+ * @param {Array} rolls - Array of roll values (numbers, 'x2')
  * @returns {number} The calculated score after applying all modifiers
  */
 export function ComputePendingRollScore(rolls) {
@@ -66,10 +67,6 @@ export function ComputePendingRollScore(rolls) {
       const txt = roll.trim().toLowerCase();
       if (txt === 'x2') {
         sum *= 2;
-        continue;
-      }
-      if (txt === 'bust') {
-        sum = 0;
         continue;
       }
     }
@@ -183,20 +180,17 @@ export class Game {
   }
 
   get noChanges() {
-    let noChanges = true;
+    if (this.rolls.length > 0 ) {
+      return false;
+    }
 
     for (const player of this.players) {
       if (player.hasPendingScore || player.status === 'out') {
-        noChanges = false;
-        break;
+        return false;
       }
     }
 
-    if (this.rolls.length > 0 ) {
-      noChanges = false;
-    }
-
-    return noChanges;
+    return true;
   }
 
   get canBust() {
@@ -204,12 +198,14 @@ export class Game {
       return true; // Let's someone just use the scorepad without players
     }
     
-    for (const player of this.players) {
-      if (player.status === 'in' && player.hasPendingScore) {
-        return true;
-      }
+    if (this.players.every(player => player.status === 'out')) {
+      return false;
     }
 
+    if (this.rolls.length > 0 ) {
+      return true;
+    }
+    
     return false;
   }
 
@@ -570,8 +566,12 @@ export class AppState {
   }
 
   changePlayerName(player, newName) {
-    //console.log(`Changing player name from ${player.name} to ${newName}`);
-    const command = new ChangePlayerNameCommand(player, newName);
+    const normalizedName = String(newName || '').trim().slice(0, PLAYER_NAME_MAX_LENGTH);
+    if (!normalizedName || normalizedName === player.name) {
+      return;
+    }
+
+    const command = new ChangePlayerNameCommand(player, normalizedName);
     this._commandStack.execute(command);
   }
 

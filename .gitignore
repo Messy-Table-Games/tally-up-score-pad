@@ -43,11 +43,8 @@ xcuserdata/
 
 .build/
 
-.firebaserc
 .firebase/
 ui-debug.log
 firebase-debug.log
 
 *storybook.log
-
-untracked/

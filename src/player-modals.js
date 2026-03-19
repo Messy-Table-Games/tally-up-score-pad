@@ -1,6 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import './modal-dialog.js';
 
+const PLAYER_NAME_MAX_LENGTH = 50;
+
 // Base class for player modals
 class PlayerOptionsModal extends LitElement {
   static properties = {
@@ -170,6 +172,17 @@ class PlayerNameModal extends PlayerOptionsModal {
     this.confirmDelete = false;
   }
 
+  updated(changedProperties) {
+    super.updated(changedProperties);
+
+    if ((changedProperties.has('tempName') || changedProperties.has('open')) && typeof this.tempName === 'string') {
+      const clippedName = this.tempName.slice(0, PLAYER_NAME_MAX_LENGTH);
+      if (clippedName !== this.tempName) {
+        this.tempName = clippedName;
+      }
+    }
+  }
+
   getInputSelector() {
     return '.name-input';
   }
@@ -186,6 +199,7 @@ class PlayerNameModal extends PlayerOptionsModal {
           type="text" 
           class="name-input"
           .value=${this.tempName}
+          maxlength=${PLAYER_NAME_MAX_LENGTH}
           @input=${this._onNameInput}
           @keydown=${this._onKeydown}
         />
@@ -206,7 +220,8 @@ class PlayerNameModal extends PlayerOptionsModal {
   }
 
   _onNameInput(e) {
-    this.tempName = e.target.value;
+    this.tempName = e.target.value.slice(0, PLAYER_NAME_MAX_LENGTH);
+    e.target.value = this.tempName;
   }
 
   _onKeydown(e) {
@@ -240,7 +255,7 @@ class PlayerNameModal extends PlayerOptionsModal {
   }
 
   _onSave() {
-    const newName = this.tempName.trim();
+    const newName = this.tempName.trim().slice(0, PLAYER_NAME_MAX_LENGTH);
     if (this.player && newName) {
       this.dispatchEvent(new CustomEvent('player-name-save', {
         detail: { player: this.player, newName }, 
