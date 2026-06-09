@@ -5,6 +5,10 @@ import '../src/pending-score.js';
 export default {
   title: 'PendingScore',
   component: 'pending-score',
+  tags: ['autodocs'],
+  argTypes: {
+    game: { control: false, description: 'Game model instance with players and rolls arrays' },
+  },
 };
 
 export const Default = () => {

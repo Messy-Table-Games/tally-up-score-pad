@@ -1,6 +1,8 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { autorun } from 'mobx';
 import { ComputePendingRollScore } from './model.js';
+import { t } from './i18n.js';
+import { starSvg } from './shared-styles.js';
 
 export class PendingScore extends LitElement {
   static properties = {
@@ -11,17 +13,17 @@ export class PendingScore extends LitElement {
   static styles = css`
     :host {
       box-sizing: border-box;
-      height: 34px;
+      height: 36px;
       font-size: 16px;
       min-width: 100%;
+      background: #ffe3aa;
     }
 
     .content {
+      position: relative;
       height: 100%;
       width: 100%;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-areas: "rolls rolls rolls sum";
+      display: flex;
       align-items: center;
       justify-content: flex-end;
       gap: 4px;
@@ -40,7 +42,7 @@ export class PendingScore extends LitElement {
       font-size: 16px;
       letter-spacing: 0.06em;
       color: #000;
-      opacity: 0.2;
+      opacity: 0.3;
       z-index: 0;
       text-align: center;
       transition: opacity 0.25s ease;
@@ -51,18 +53,14 @@ export class PendingScore extends LitElement {
     }
 
     .rolls-container {
-      box-sizing: border-box;
+      flex: 1 1 auto;
       height: 100%;
       overflow: hidden; 
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      padding: 0px 0px;
-      border: 2px solid #e1e1e1;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.95);
-      position: relative;
-      grid-area: rolls;
+      padding: 0;
+      border: 0px solid #fff;
     }
 
     .roll-fade {
@@ -83,9 +81,10 @@ export class PendingScore extends LitElement {
     
     .rolls {
       display: flex;
-      gap: 0px;
+      gap: 2px;
       justify-content: flex-end;
       align-items: center;
+      padding: 8px 0;
     }
 
     /* Ghosts sit perfectly flush against the real rolls */
@@ -95,36 +94,53 @@ export class PendingScore extends LitElement {
       justify-content: flex-start;
       align-items: center;
     }
-
+  
     .sum {
-      box-sizing: border-box;
+      font-size: 18px;
       height: 100%;
-      width: 100%;
+      border: none;
+      background-color: #fffaef;
+      flex: 0 0 auto;
+      min-width: 2.3em;
       overflow: hidden;
       font-weight: bold;
       display: inline-flex;
       align-items: center;
       justify-content: flex-end;
-      padding: 0 6px 0 0;
-      border: 2px solid #e1e1e1;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.95);
-      grid-area: sum;
+      padding: 0 8px 0 8px;
+      color: #333;
     }
     
+    .empty {
+      padding: 0;
+    }
+
+    .pos {
+      color: #3182ce;
+    }
+    
+    .neg {
+      color: #d32f2f;
+    }
+
     .pill {
       font-weight: bold;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0px 6px;
+      padding: 2px 6px;
       margin-right: 4px;
-      border: 1px solid #444;
-      border-radius: 4px;
+      border-radius: 6px;
       background: #fff;
       color: #333;
       height: 20px;
       flex-shrink: 0; 
+      gap: 3px;
+      box-shadow: 0 0px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .stars {
+      font-size: 14px;
     }
   `;
 
@@ -243,6 +259,17 @@ export class PendingScore extends LitElement {
 
   render() {
     const hasRolls = this._rolls.length > 0;
+    let sumVal = '0';
+    let sumClass = "sum";
+    if (this.sum > 0) {
+      sumVal = '+' + this.sum;
+      sumClass += " pos";
+    } else if (this.sum < 0) {
+      sumVal = '' + this.sum;
+      sumClass += " neg";
+    } else {
+
+    }
 
     // Arbitrarily constrain to drawing only 30 rolls. This limits
     // rendering and the only time it would be noticeable is if someone
@@ -252,19 +279,23 @@ export class PendingScore extends LitElement {
     const rollsToDraw = this._rolls.slice(-30);
 
     return html`
-      <div class="content" role="region" aria-label="Pending score">
-        <div class="rolls-container" aria-label="Pending rolls">
-          <div class="bg-text ${hasRolls ? 'hidden' : ''}" aria-hidden="true">Rolls</div>
-          <div class="roll-fade">
+      <div class="content" role="region" aria-label=${t('label.pendingScore')}>
+        <div class="bg-text ${hasRolls ? 'hidden' : ''}" aria-hidden="true">${t('label.rollsPlaceholder')}</div>
+        <div class="rolls-container" aria-label=${t('label.pendingRolls')}>
+          <!-- <div class="roll-fade"> -->
             <div class="moving-track">
               <div class="rolls">
-                ${rollsToDraw.map((val) => html`<span class="pill">${val}</span>`)}
+                ${rollsToDraw.map((val) => val === 'TUP!'
+                  ? html`<span class="pill stars">${starSvg}${starSvg}${starSvg}</span>`
+                  : html`<span class="pill">${val}</span>`)}
               </div>
               <div id="ghosts" aria-hidden="true"></div>
             </div>
-          </div>
+          <!-- </div> -->
         </div>
-        <div class="sum" aria-live="polite" aria-label="Total: ${this.sum}">${this.sum}</div>
+        <div class="${sumClass}" aria-live="polite" aria-label=${t('label.total', { sum: this.sum })}>
+          ${sumVal}
+        </div>
       </div>
     `;
   }

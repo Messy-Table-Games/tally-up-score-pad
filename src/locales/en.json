@@ -1,0 +1,57 @@
+{
+  "game.name": "Tally Up",
+
+  "button.undo": "Undo",
+  "button.clear": "Clear",
+  "button.close": "Close",
+  "button.ok": "OK",
+  "button.cancel": "Cancel",
+  "button.saveChanges": "Save Changes",
+  "button.deletePlayer": "Delete Player",
+  "button.confirmDelete": "Confirm Delete",
+  "button.showHelp": "Show Help",
+  "button.hideHelp": "Hide Help",
+
+  "diceButton.bust": "Bust",
+  "diceButton.next": "Next",
+  "diceButton.value": "Dice value {{value}}",
+
+  "label.playerName": "Name:",
+  "label.playerScore": "Score:",
+  "label.scoreInputPlaceholder": "Score",
+  "label.addPlayer": "Add Player",
+  "label.pendingScore": "Pending score",
+  "label.pendingRolls": "Pending rolls",
+  "label.rollsPlaceholder": "Rolls",
+  "label.total": "Total: {{sum}}",
+
+  "dialog.undoDefault": "Do you want to undo the last action?",
+  "dialog.clearConfirm": "Are you sure you want to clear the game scores? This cannot be undone.",
+  "dialog.clearConfirmLabel": "Clear Scores",
+
+  "undo.addPlayer": "Undo adding {{name}}?",
+  "undo.addPlayerUnknown": "Undo adding a player?",
+  "undo.deletePlayer": "Undo deleting {{name}}?",
+  "undo.deletePlayerUnknown": "Undo deleting a player?",
+  "undo.renamePlayer": "Undo setting player name to {{name}}?",
+  "undo.setStatus": "Undo setting {{name}} to {{status}}?",
+  "undo.setStatusUnknown": "Undo setting player status to {{status}}?",
+  "undo.setScore": "Undo setting the score for {{name}} to {{score}}?",
+  "undo.setScoreUnknown": "Undo setting player's score?",
+  "undo.diceRoll": "Undo dice roll of {{value}}?",
+  "undo.next": "Undo Next?",
+  "undo.bust": "Undo Bust?",
+  "undo.tallyUp": "Undo Tally Up?",
+
+  "status.in": "IN",
+  "status.out": "OUT",
+
+  "player.defaultName": "Player {{number}}",
+
+  "help.content": "<ul><li>Tap a player name to change the name or delete a player.</li><li>Tap on a dice roll number in the button pad to add it to the running total.</li><li>Tap the <b><span class='in'>IN</span> / <span class='out'>OUT</span></b> button for a player to change their status.</li><li>Tap <b>Bust</b> when a bust occurs. <em>A bust occurs when 2 stars are rolled in the Main roll, or 2 or more stars are shown after the Up die roll.</em></li><li>Tap <b>Next</b> if all players have gone <b><span class='out'>OUT</span></b>.</li><li>Tap {{tupButton}} for the player that yells Tally Up! first. This will add 200 points to their score, and then adds 100 points to the scores for all other players still <b><span class='in'>IN</span></b>. <em>A Tally Up! occurs when 3 stars are rolled in the Main roll.</em></li><li>Tap on a player's score to manually change their score.</li><li>Tap <b>Undo</b> to revert the last action.</li><li>Tap <b>Clear</b> to reset all scores to 0 for a new game.</li></ul>",
+
+  "page.title": "Tally Up Score Pad",
+  "page.description": "A score keeping app for Tally Up",
+
+  "locale.label": "Language"
+}

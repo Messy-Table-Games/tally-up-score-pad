@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { headerButtonStyles } from './shared-styles.js';
+import { t } from './i18n.js';
 
 export class ResetButton extends LitElement {
   static styles = [
@@ -13,8 +14,15 @@ export class ResetButton extends LitElement {
 
   render() {
     return html`
-      <button>Clear</button>
+      <button @click=${this._handleClick}>${t('button.clear')}</button>
     `;
+  }
+
+  _handleClick() {
+    this.dispatchEvent(new CustomEvent('reset-click', {
+      bubbles: true,
+      composed: true,
+    }));
   }
 }
 

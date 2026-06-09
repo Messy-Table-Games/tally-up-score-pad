@@ -1,0 +1,57 @@
+{
+  "game.name": "Tally Up",
+
+  "button.undo": "Rückgängig",
+  "button.clear": "Neues Spiel",
+  "button.close": "Schließen",
+  "button.ok": "OK",
+  "button.cancel": "Abbrechen",
+  "button.saveChanges": "Änderungen speichern",
+  "button.deletePlayer": "Spieler löschen",
+  "button.confirmDelete": "Löschung bestätigen",
+  "button.showHelp": "Hilfe anzeigen",
+  "button.hideHelp": "Hilfe ausblenden",
+
+  "diceButton.bust": "Verzockt",
+  "diceButton.next": "Neue Runde",
+  "diceButton.value": "Würfelwert {{value}}",
+
+  "label.playerName": "Name",
+  "label.playerScore": "Punkte",
+  "label.scoreInputPlaceholder": "Punkte",
+  "label.addPlayer": "Spieler hinzufügen",
+  "label.pendingScore": "Ergebnis steht aus",
+  "label.pendingRolls": "Würfelwurf steht aus",
+  "label.rollsPlaceholder": "Würfelergebnisse",
+  "label.total": "Gesamt: {{sum}}",
+
+  "dialog.undoDefault": "Weiter",
+  "dialog.clearConfirm": "Bist du sicher, dass du alle Punkte löschen möchtest? Das kann nicht rückgängig gemacht werden.",
+  "dialog.clearConfirmLabel": "Alle Punkte löschen",
+
+  "undo.addPlayer": "{{name}} hinzufügen rückgängig machen?",
+  "undo.addPlayerUnknown": "Spieler hinzufügen rückgängig machen?",
+  "undo.deletePlayer": "{{name}} löschen rückgängig machen?",
+  "undo.deletePlayerUnknown": "Spieler löschen rückgängig machen?",
+  "undo.renamePlayer": "Spielername {{name}} vergeben rückgängig machen?",
+  "undo.setStatus": "{{name}} {{status}} markieren rückgängig machen?",
+  "undo.setStatusUnknown": "Spieler {{status}} markieren rückgängig machen?",
+  "undo.setScore": "Punkte für {{name}} auf {{score}} ändern rückgängig machen?",
+  "undo.setScoreUnknown": "Spielerpunkte ändern rückgängig machen?",
+  "undo.diceRoll": "Würfelwurf {{value}} rückgangig machen?",
+  "undo.next": "Neue Runde starten rückgängig machen?",
+  "undo.bust": "Verzockt rückgängig machen?",
+  "undo.tallyUp": "Tally Up rückgängig machen?",
+
+  "status.in": "IN",
+  "status.out": "OUT",
+
+  "player.defaultName": "Spieler {{number}}",
+
+  "help.content": "<ul><li>Klick auf den Spielernamen, um den Namen zu ändern oder den Spieler zu löschen.</li><li>Klick auf einen gewürfelten Zahlenwert im Tastenfeld, um ihn der Rundenpunktzahl hinzuzufügen.</li><li>Klick <b><span class='in'>IN</span> / <span class='out'>OUT</span></b>, um den Status eines Spielers zu verändern.</li><li>Klickt <b>Verzockt</b>, wenn ihr euch verzockt habt. <em>Ihr habt euch verzockt, wenn unter den ersten drei Farbwürfeln 2 Sterne liegen oder wenn nach Einsatz der Bonuswürfel 2 oder mehr Sterne sichtbar sind.</em></li><li>Klick <b>Neue Runde</b> wenn alle Spieler <b><span class='out'>OUT</span></b> sind.</li><li>Klick {{tupButton}} bei dem Spieler, der zuerst \"Tally Up!\" gerufen hat. Er erhält 200 Punkte. Alle anderen, die noch <b><span class='in'>IN</span></b> sind, erhalten automatisch 100 Punkte. <em>Immer wenn die 3 zu Beginn der Runde gewählten Farbwürfel 3 Sterne zeigen, habt ihr ein TALLY UP!</em></li><li>Klick auf die Punktzahl eines Spielers, um sie händisch zu ändern.</li><li>Klick <b>Rückgängig</b>, um die letzte Eingabe rückgängig zu machen.</li><li>Klick <b>Neues Spiel</b>, um alle Punkte auf 0 zu setzen.</li></ul>",
+
+  "page.title": "Tally Up - digitaler Punktezähler",
+  "page.description": "Ein digitaler Punktezähler für Tally Up!",
+
+  "locale.label": "Sprache"
+}

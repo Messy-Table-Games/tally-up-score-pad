@@ -1,5 +1,11 @@
 const path = require('path');
+const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+const envFile = path.resolve(__dirname, '../.env');
+if (fs.existsSync(envFile)) {
+  require('dotenv').config({ path: envFile });
+}
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const GenerateBuildTxtFilePlugin = require('./buildtxt.plugin.js');
 
@@ -9,6 +15,9 @@ module.exports = {
     // Use the Html plugin so it injects the hashed script name
     new HtmlWebpackPlugin({
       template: 'src/index.ejs',
+      templateParameters: {
+        TUPSP_INCLUDE_SA: !!process.env.TUPSP_INCLUDE_SA
+      }
     }),
     new GenerateBuildTxtFilePlugin(),
     new CopyWebpackPlugin({

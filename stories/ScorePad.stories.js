@@ -1,4 +1,4 @@
-import { html } from 'lit-html';
+import { html } from 'lit';
 import { AppState, Game, Player } from '../src/model.js';
 import '../src/score-pad.js';
 

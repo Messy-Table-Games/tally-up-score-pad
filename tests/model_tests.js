@@ -63,6 +63,47 @@ registerTest('testAddPlayerCommand', function() {
   TestCondition(game.players.length === 1 && game.players[0].name === 'Player 1', 'testAddPlayerCommand redo');
 });
 
+registerTest('testAddPlayerCommandWithName', function() {
+  const game = new Game();
+  const cmd = new AddPlayerCommand(game, 'Alice');
+  cmd.execute();
+  TestCondition(game.players.length === 1, 'testAddPlayerCommandWithName execute length');
+  TestCondition(game.players[0].name === 'Alice', 'testAddPlayerCommandWithName execute name');
+  cmd.undo();
+  TestCondition(game.players.length === 0, 'testAddPlayerCommandWithName undo');
+  cmd.redo();
+  TestCondition(game.players.length === 1 && game.players[0].name === 'Alice', 'testAddPlayerCommandWithName redo');
+});
+
+registerTest('testAddPlayerCommandNullName', function() {
+  const game = new Game();
+  const cmd = new AddPlayerCommand(game, null);
+  cmd.execute();
+  TestCondition(game.players.length === 1, 'testAddPlayerCommandNullName execute length');
+  TestCondition(game.players[0].name === 'Player 1', 'testAddPlayerCommandNullName default name');
+});
+
+registerTest('testAddPlayerCommandViaAppState', function() {
+  const appState = new AppState({ storageKey: 'testAddPlayerCommandViaAppState' });
+  appState.addPlayer('Bob');
+  TestCondition(appState.game.players.length === 1, 'testAddPlayerCommandViaAppState length');
+  TestCondition(appState.game.players[0].name === 'Bob', 'testAddPlayerCommandViaAppState name');
+  appState.undo();
+  TestCondition(appState.game.players.length === 0, 'testAddPlayerCommandViaAppState undo');
+});
+
+registerTest('testAddPlayerCommandSerializeDeserialize', function() {
+  const game = new Game();
+  const cmd = new AddPlayerCommand(game, 'Carol');
+  cmd.execute();
+  TestCondition(game.players[0].name === 'Carol', 'testAddPlayerCommandSerializeDeserialize execute name');
+  const serialized = cmd.serialize();
+  const restored = AddPlayerCommand.deserialize(serialized.data, game);
+  TestCondition(restored !== null, 'testAddPlayerCommandSerializeDeserialize deserialize non-null');
+  restored.undo();
+  TestCondition(game.players.length === 0, 'testAddPlayerCommandSerializeDeserialize undo after deserialize');
+});
+
 // Test for RemovePlayerCommand
 registerTest('testRemovePlayerCommand', function() {
   const game = new Game();

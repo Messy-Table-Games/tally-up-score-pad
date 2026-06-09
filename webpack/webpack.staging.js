@@ -10,7 +10,6 @@ module.exports = merge(common, {
   optimization: {
     minimize: true,
     minimizer: [
-      // Setting extractComments to false avoids generating the *.LICENSE.txt file
       new TerserPlugin({
         extractComments: false,
       }),
@@ -18,7 +17,7 @@ module.exports = merge(common, {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'APP_ENV': JSON.stringify('production'),
+      'APP_ENV': JSON.stringify('staging'),
       'APP_BUILD_NUMBER': JSON.stringify(APP_BUILD_NUMBER)
     }),
     new InjectManifest({

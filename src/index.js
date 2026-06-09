@@ -1,9 +1,15 @@
 import './app-view.js';
 import { startBuildChecker, checkForNewBuildNow, reloadForNewBuild } from './build-checker.js';
+import { t, i18nStore } from './i18n.js';
 
 if (window.location.pathname !== '/') {
   window.location.replace('/');
 }
+
+document.title = t('page.title');
+document.documentElement.lang = i18nStore.locale;
+const _appleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+if (_appleMeta) _appleMeta.content = t('game.name');
 
 let gServiceWorkerReg = null;
 
@@ -12,7 +18,7 @@ async function registerServiceWorker() {
     return;
   }
 
-  if (APP_ENV !== 'production') {
+  if (APP_ENV !== 'production' && APP_ENV !== 'staging') {
     return;
   }
   

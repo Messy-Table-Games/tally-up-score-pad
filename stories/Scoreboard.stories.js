@@ -1,10 +1,14 @@
-import { html } from 'lit-html';
+import { html } from 'lit';
 import { Player } from '../src/model.js';
 import '../src/score-board.js';
 
 export default {
   title: 'Scoreboard',
   component: 'score-board',
+  tags: ['autodocs'],
+  argTypes: {
+    game: { control: false, description: 'Game model instance with players and rolls arrays' },
+  },
 };
 
 export const Default = () => {

@@ -1,0 +1,57 @@
+{
+  "game.name": "Súmale",
+
+  "button.undo": "Deshacer",
+  "button.clear": "Reiniciar",
+  "button.close": "Cerrar",
+  "button.ok": "OK",
+  "button.cancel": "Cancelar",
+  "button.saveChanges": "Guardar cambios",
+  "button.deletePlayer": "Borrar jugador",
+  "button.confirmDelete": "Sí, borrar",
+  "button.showHelp": "Mostrar ayuda",
+  "button.hideHelp": "Ocultar ayuda",
+
+  "diceButton.bust": "Pasarse",
+  "diceButton.next": "Siguiente",
+  "diceButton.value": "Valor del dado {{value}}",
+
+  "label.playerName": "Nombre:",
+  "label.playerScore": "Puntuación:",
+  "label.scoreInputPlaceholder": "Puntuación",
+  "label.addPlayer": "Añadir jugador",
+  "label.pendingScore": "Puntuación pendiente",
+  "label.pendingRolls": "Tiradas pendientes",
+  "label.rollsPlaceholder": "Tiradas",
+  "label.total": "Total: {{sum}}",
+
+  "dialog.undoDefault": "¿Quieres deshacer la última acción?",
+  "dialog.clearConfirm": "¿Estás seguro de que quieres borrar todos los puntos del juego? Esta acción no se puede deshacer.",
+  "dialog.clearConfirmLabel": "Borrar puntos",
+
+  "undo.addPlayer": "¿Quitar a {{name}}?",
+  "undo.addPlayerUnknown": "¿Quitar al jugador?",
+  "undo.deletePlayer": "¿Recuperar a {{name}}?",
+  "undo.deletePlayerUnknown": "¿Recuperar al jugador?",
+  "undo.renamePlayer": "¿Deshacer el cambio de nombre a {{name}}?",
+  "undo.setStatus": "¿Deshacer el estado de {{name}} a {{status}}?",
+  "undo.setStatusUnknown": "¿Deshacer el cambio de estado del jugador a {{status}}?",
+  "undo.setScore": "¿Deshacer la puntuación de {{score}} para {{name}}?",
+  "undo.setScoreUnknown": "¿Deshacer los puntos del jugador?",
+  "undo.diceRoll": "¿Deshacer la tirada de {{value}}?",
+  "undo.next": "¿Deshacer \"Siguiente\"?",
+  "undo.bust": "¿Deshacer \"Pasarse\"?",
+  "undo.tallyUp": "¿Deshacer el \"Súmale\"?",
+
+  "status.in": "DENTRO",
+  "status.out": "FUERA",
+
+  "player.defaultName": "Jugador {{number}}",
+
+  "help.content": "<ul><li>Toca el nombre de un jugador para cambiarlo o eliminarlo.</li><li>Toca un número en el panel para añadirlo a la suma acumulada.</li><li>Toca el botón <b><span class='in'>DENTRO</span> / <span class='out'>FUERA</span></b> de un jugador para cambiar su estado.</li><li>Toca <b>Pasarse</b> cuando ocurra ¡TE PASASTE!. <em>Esto sucede cuando salen 2 estrellas en la tirada principal o 2 o más estrellas después de una tirada extra.</em></li><li>Toca <b>Siguiente</b> si todos los jugadores están <b><span class='out'>FUERA</span></b>.</li><li>Toca {{tupButton}} para el jugador que grite primero “¡SÚMALE!”. Esto añade 200 puntos a su puntuación y luego añade 100 puntos a las puntuaciones de todos los demás jugadores que siguen <b><span class='in'>DENTRO</span></b>. <em>Un ¡SÚMALE! ocurre cuando salen 3 estrellas en la tirada principal.</em></li><li>Toca <b>Deshacer</b> para revertir la última acción.</li><li>Toca <b>Reiniciar</b> para restablecer todas las puntuaciones a 0 para un juego nuevo.</li></ul>",
+
+  "page.title": "¡Súmale! · Marcador",
+  "page.description": "El marcador digital de ¡Súmale!",
+
+  "locale.label": "Idioma"
+}

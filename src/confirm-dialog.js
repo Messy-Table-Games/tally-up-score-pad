@@ -1,5 +1,6 @@
 import { LitElement, html, css, nothing } from 'lit';
 import './modal-dialog.js';
+import { t } from './i18n.js';
 
 export class ConfirmDialog extends LitElement {
   static properties = {
@@ -62,7 +63,7 @@ export class ConfirmDialog extends LitElement {
 
     @media (max-width: 420px) {
       .actions {
-        flex-direction: column;
+        flex-direction: column-reverse;
         align-items: center;
         width: max-content;
         margin-left: auto;
@@ -80,8 +81,8 @@ export class ConfirmDialog extends LitElement {
     this.open = false;
     this.title = '';
     this.message = '';
-    this.confirmLabel = 'OK';
-    this.cancelLabel = 'Cancel';
+    this.confirmLabel = t('button.ok');
+    this.cancelLabel = t('button.cancel');
     this.variant = 'primary';
     this.showCancel = true;
     this._resolver = null;

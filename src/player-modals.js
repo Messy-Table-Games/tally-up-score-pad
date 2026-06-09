@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import './modal-dialog.js';
+import { t } from './i18n.js';
 
 const PLAYER_NAME_MAX_LENGTH = 50;
 
@@ -68,9 +69,12 @@ class PlayerOptionsModal extends LitElement {
       }
       /* Override order for column layout: Cancel, Save, Delete */
       .modal-buttons .primary {
-        order: 2;
+        order: 1;
       }
       .modal-buttons .danger {
+        order: 2;
+      }
+      .modal-buttons .secondary {
         order: 3;
       }
     }
@@ -106,6 +110,14 @@ class PlayerOptionsModal extends LitElement {
     super();
     this.open = false;
     this.player = null;
+    this._resolver = null;
+  }
+
+  _resolve(value) {
+    if (this._resolver) {
+      this._resolver(value);
+      this._resolver = null;
+    }
   }
 
   updated(changedProperties) {
@@ -135,6 +147,7 @@ class PlayerOptionsModal extends LitElement {
     return html``;
   }
 
+  // Subclasses must implement _onClose
   render() {
     return html`
       <modal-dialog
@@ -149,27 +162,29 @@ class PlayerOptionsModal extends LitElement {
     `;
   }
 
-  _onSave() {
-    // Subclasses should override this
-  }
-
-  _onClose() {
-    // Subclasses should override this
+  // Subclasses must implement _onEnter() and _onEscape()
+  _onKeydown(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      this._onEnter();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      this._onEscape();
+    }
   }
 }
 
-// Subclass for editing player name only
 class PlayerNameModal extends PlayerOptionsModal {
   static properties = {
     ...super.properties,
     tempName: { type: String },
-    confirmDelete: { type: Boolean },
-  };
+  }
 
   constructor() {
     super();
     this.tempName = '';
-    this.confirmDelete = false;
   }
 
   updated(changedProperties) {
@@ -187,14 +202,10 @@ class PlayerNameModal extends PlayerOptionsModal {
     return '.name-input';
   }
 
-  getTitle() {
-    return "";
-  }
-
-  renderContent() {
+  _renderPlayerName() {
     return html`
       <div>
-        <label>Player Name:</label>
+        <label>${t('label.playerName')}</label>
         <input 
           type="text" 
           class="name-input"
@@ -203,36 +214,82 @@ class PlayerNameModal extends PlayerOptionsModal {
           @input=${this._onNameInput}
           @keydown=${this._onKeydown}
         />
-      </div>
-      <div class="modal-buttons">
-        ${this.confirmDelete
-          ? html`
-              <button class="secondary" @click=${this._onCancelDelete}>Cancel</button>
-              <button class="danger" @click=${this._onConfirmDelete}>Confirm Delete</button>
-            `
-          : html`
-              <button class="secondary" @click=${this._onClose}>Cancel</button>
-              <button class="primary" @click=${this._onSave}>Save Changes</button>
-              <button class="danger" @click=${this._onDelete}>Delete Player</button>
-            `}
-      </div>
-    `;
+      </div>`;
   }
 
   _onNameInput(e) {
     this.tempName = e.target.value.slice(0, PLAYER_NAME_MAX_LENGTH);
     e.target.value = this.tempName;
   }
+  
+  _onClose() {
+    this.close();
+  }
+}
 
-  _onKeydown(e) {
-    if (e.key === 'Enter') {
-      this._onSave();
-    } else if (e.key === 'Escape') {
-      if (this.confirmDelete) {
-        this._onCancelDelete();
-      } else {
-        this._onClose();
-      }
+
+// Subclass for editing player name only
+class EditNameModal extends PlayerNameModal {
+  static properties = {
+    ...super.properties,
+    confirmDelete: { type: Boolean },
+  };
+
+  constructor() {
+    super();
+    this.tempName = '';
+    this.confirmDelete = false;
+  }
+
+  async show({ player }) {
+    this.player = player;
+    this.tempName = player.name;
+    this.confirmDelete = false;
+    this.open = true;
+    return new Promise(resolve => { this._resolver = resolve; });
+  }
+
+  close(result = null) {
+    if (!this.open) return;
+    this.open = false;
+    this.confirmDelete = false;
+    this.tempName = '';
+    this._resolve(result);
+  }
+
+  renderContent() {
+    return html`
+      ${this._renderPlayerName()}
+      <div class="modal-buttons">
+        ${this._renderButtons()}
+      </div>
+    `;
+  }
+
+  _renderButtons() {
+    if (this.confirmDelete) {
+      return html`
+        <button class="secondary" @click=${this._onCancelDelete}>${t('button.cancel')}</button>
+        <button class="danger" @click=${this._onConfirmDelete}>${t('button.confirmDelete')}</button>
+      `;
+    } else {
+      return html`
+        <button class="secondary" @click=${this._onClose}>${t('button.cancel')}</button>
+        <button class="primary" @click=${this._onSave}>${t('button.saveChanges')}</button>
+        <button class="danger" @click=${this._onDelete}>${t('button.deletePlayer')}</button>
+      `;
+    }
+  }
+
+  _onEnter() {
+    this._onSave();
+  }
+
+  _onEscape() {
+    if (this.confirmDelete) {
+      this._onCancelDelete();
+    } else {
+      this._onClose();
     }
   }
 
@@ -246,37 +303,73 @@ class PlayerNameModal extends PlayerOptionsModal {
 
   _onConfirmDelete() {
     if (!this.player) return;
-    this.dispatchEvent(new CustomEvent('player-delete', {
-      detail: { playerId: this.player.id },
-      bubbles: true,
-      composed: true,
-    }));
-    this._onClose();
+    this.close({ action: 'delete', playerId: this.player.id });
   }
 
   _onSave() {
     const newName = this.tempName.trim().slice(0, PLAYER_NAME_MAX_LENGTH);
     if (this.player && newName) {
-      this.dispatchEvent(new CustomEvent('player-name-save', {
-        detail: { player: this.player, newName }, 
-        bubbles: true,
-        composed: true,
-      }));
+      this.close({ action: 'save', newName });
+    } else {
+      this.close(null);
     }
+  }
+}
+
+class AddPlayerModal extends PlayerNameModal {
+  static properties = {
+    ...super.properties,
+  };
+
+  constructor() {
+    super();
+    this.tempName = '';
+  }
+
+  async show() {
+    this.open = true;
+    return new Promise(resolve => {
+      this._resolver = resolve;
+    });
+  }
+
+  close(result = {add: false, name: null}) {
+    if (!this.open) return;
+    this.open = false;
+    this._resolve(result);
+    this.tempName = '';
+  }
+
+  renderContent() {
+    return html`
+      ${this._renderPlayerName()}
+      <div class="modal-buttons">
+        <button class="secondary" @click=${this._onCancel}>${t('button.cancel')}</button>
+        <button class="primary" @click=${this._onAdd}>${t('label.addPlayer')}</button>
+      </div>
+    `;
+  }
+
+  _onEnter() {
+    this._onAdd();
+  }
+
+  _onEscape() {
     this._onClose();
   }
 
-  _onClose() {
-    this.confirmDelete = false;
-    this.dispatchEvent(new CustomEvent('player-name-close', {
-      bubbles: true,
-      composed: true,
-    }));
+  _onCancel() {
+    this.close();
+  }
+
+  _onAdd() {
+    const name = this.tempName.trim().slice(0, PLAYER_NAME_MAX_LENGTH);
+    this.close({ add: true, name: name });
   }
 }
 
 // Subclass for editing player score only
-class PlayerScoreModal extends PlayerOptionsModal {
+class EditScoreModal extends PlayerOptionsModal {
   static properties = {
     ...super.properties,
     tempScore: { type: Number },
@@ -285,6 +378,20 @@ class PlayerScoreModal extends PlayerOptionsModal {
   constructor() {
     super();
     this.tempScore = 0;
+  }
+
+  async show({ player }) {
+    this.player = player;
+    this.tempScore = player.bankedScore;
+    this.open = true;
+    return new Promise(resolve => { this._resolver = resolve; });
+  }
+
+  close(result = null) {
+    if (!this.open) return;
+    this.open = false;
+    this.tempScore = 0;
+    this._resolve(result);
   }
 
   getInputSelector() {
@@ -298,20 +405,20 @@ class PlayerScoreModal extends PlayerOptionsModal {
   renderContent() {
     return html`
       <div>  
-        <label>Player Score:</label>
-        <input 
-          type="number" 
+        <label>${t('label.playerScore')}</label>
+        <input
+          type="number"
           class="score-input"
           .value=${String(this.tempScore)}
           @input=${this._onScoreInput}
           @keydown=${this._onKeydown}
-          placeholder="Score"
+          placeholder=${t('label.scoreInputPlaceholder')}
           min="0"
         />
       </div>
       <div class="modal-buttons">
-        <button class="secondary" @click=${this._onClose}>Cancel</button>
-        <button class="primary" @click=${this._onSave}>Save Changes</button>
+        <button class="secondary" @click=${this._onClose}>${t('button.cancel')}</button>
+        <button class="primary" @click=${this._onSave}>${t('button.saveChanges')}</button>
       </div>
     `;
   }
@@ -320,33 +427,23 @@ class PlayerScoreModal extends PlayerOptionsModal {
     this.tempScore = e.target.value;
   }
 
-  _onKeydown(e) {
-    if (e.key === 'Enter') {
-      this._onSave();
-    } else if (e.key === 'Escape') {
-      this._onClose();
-    }
+  _onEnter() {
+    this._onSave();
   }
 
-  _onSave() {
-    const newScore = this.tempScore;
-    if (this.player) {
-      this.dispatchEvent(new CustomEvent('player-score-save', {
-        detail: { player: this.player, newScore }, 
-        bubbles: true,
-        composed: true,
-      }));
-    }
+  _onEscape() {
     this._onClose();
   }
 
+  _onSave() {
+    this.close({ action: 'save', newScore: Number(this.tempScore) });
+  }
+
   _onClose() {
-    this.dispatchEvent(new CustomEvent('player-score-close', {
-      bubbles: true,
-      composed: true,
-    }));
+    this.close(null);
   }
 }
 
-customElements.define('player-name-modal', PlayerNameModal);
-customElements.define('player-score-modal', PlayerScoreModal);
+customElements.define('edit-name-modal', EditNameModal);
+customElements.define('edit-score-modal', EditScoreModal);
+customElements.define('add-player-modal', AddPlayerModal);

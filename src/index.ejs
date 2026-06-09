@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
 
 <head>
   <meta charset="utf-8">
@@ -10,15 +10,17 @@
   <meta property="og:description" content="Helps keep score for Tally Up">
   
   <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="Icon-180x180.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/Icon-180x180.png">
   
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#31333a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Tally Up Score Pad">
+  
+  <meta name="google" content="notranslate">
   
   <style>
     html,
@@ -42,7 +44,7 @@
 <body>
   <app-view></app-view>
   <!-- 100% privacy-first analytics -->
-  <% if (APP_ENV === 'production') { %>
+  <% if (APP_ENV === 'production' && TUPSP_INCLUDE_SA) { %>
   <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
   <% } %>
 </body>

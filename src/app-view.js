@@ -4,15 +4,11 @@ import './score-pad.js';
 import './player-modals.js';
 import './confirm-dialog.js';
 import { LogEvent } from './log-event.js';
+import { t } from './i18n.js';
 
 class AppView extends LitElement {
   static properties = {
     appState: { type: Object },
-    showPlayerNameModal: { type: Boolean },
-    showPlayerScoreModal: { type: Boolean },
-    editingPlayer: { type: Object },
-    tempPlayerName: { type: String },
-    tempPlayerScore: { type: Number },
   };
 
   static styles = css`
@@ -52,12 +48,10 @@ class AppView extends LitElement {
   constructor() {
     super();
     this.appState = new AppState();
-    this.showPlayerNameModal = false;
-    this.showPlayerScoreModal = false;
-    this.editingPlayer = null;
-    this.tempPlayerName = '';
-    this.tempPlayerScore = 0;
     this._confirmDialogOpen = false;
+    this._addPlayerDialogOpen = false;
+    this._editNameDialogOpen = false;
+    this._editScoreDialogOpen = false;
   }
 
   connectedCallback() {
@@ -65,7 +59,6 @@ class AppView extends LitElement {
 
     this.addEventListener('dice-button-click', this._onDiceButtonClick);
     this.addEventListener('undo-click', this._onUndo);
-    this.addEventListener('redo-click', this._onRedo);
     this.addEventListener('reset-click', this._onReset);
     this.addEventListener('add-player-click', this._onAddPlayer);
     this.addEventListener('player-name-click', this._onPlayerNameClick);
@@ -73,33 +66,18 @@ class AppView extends LitElement {
     this.addEventListener('inout-click', this._onInOutClick);
     this.addEventListener('tup-click', this._onTUPClick);
 
-    this.addEventListener('player-name-save', this._onPlayerNameSave);
-    this.addEventListener('player-delete', this._onPlayerDelete);
-    this.addEventListener('player-name-close', this._onPlayerNameModalClose);
-
-    this.addEventListener('player-score-save', this._onPlayerScoreSave);
-    this.addEventListener('player-score-close', this._onPlayerScoreModalClose);
-
     LogEvent('app_view_connected');
   }
 
   disconnectedCallback() {
     this.removeEventListener('dice-button-click', this._onDiceButtonClick);
     this.removeEventListener('undo-click', this._onUndo);
-    this.removeEventListener('redo-click', this._onRedo);
     this.removeEventListener('reset-click', this._onReset);
     this.removeEventListener('add-player-click', this._onAddPlayer);
     this.removeEventListener('player-name-click', this._onPlayerNameClick);
     this.removeEventListener('player-score-click', this._onPlayerScoreClick);
     this.removeEventListener('inout-click', this._onInOutClick);
     this.removeEventListener('tup-click', this._onTUPClick);
-
-    this.removeEventListener('player-name-save', this._onPlayerNameSave);
-    this.removeEventListener('player-delete', this._onPlayerDelete);
-    this.removeEventListener('player-name-close', this._onPlayerNameModalClose);
-
-    this.removeEventListener('player-score-save', this._onPlayerScoreSave);
-    this.removeEventListener('player-score-close', this._onPlayerScoreModalClose);
 
     super.disconnectedCallback();
   }
@@ -110,19 +88,11 @@ class AppView extends LitElement {
         .appState=${this.appState}
       ></score-pad>
 
-      <player-name-modal
-        ?open=${this.showPlayerNameModal}
-        .player=${this.editingPlayer}
-        .tempName=${this.tempPlayerName}
-      ></player-name-modal>
-
-      <player-score-modal
-        ?open=${this.showPlayerScoreModal}
-        .player=${this.editingPlayer}
-        .tempScore=${this.tempPlayerScore}
-      ></player-score-modal>
+      <edit-name-modal id="edit-name-dialog"></edit-name-modal>
+      <edit-score-modal id="edit-score-dialog"></edit-score-modal>
 
       <confirm-dialog id="confirm-dialog"></confirm-dialog>
+      <add-player-modal id="add-player-dialog"></add-player-modal>
     `;
   }
 
@@ -143,9 +113,7 @@ class AppView extends LitElement {
     if (this._confirmDialogOpen) return;
 
     const undoConfirmationMessage = this.appState.undoConfirmationMessage;
-    const message = undoConfirmationMessage 
-      ? `${undoConfirmationMessage}`
-      : 'Do you want to undo the last action?';
+    const message = undoConfirmationMessage || t('dialog.undoDefault');
 
     const dialog = this.renderRoot?.querySelector('#confirm-dialog');
     if (!dialog) return;
@@ -155,8 +123,8 @@ class AppView extends LitElement {
       const confirmed = await dialog.show({
         title: '',
         message,
-        confirmLabel: 'Undo',
-        cancelLabel: 'Cancel',
+        confirmLabel: t('button.undo'),
+        cancelLabel: t('button.cancel'),
         variant: 'primary',
         showCancel: true,
       });
@@ -170,10 +138,6 @@ class AppView extends LitElement {
     }
   }
 
-  _onRedo() {
-    this.appState.redo();
-  }
-
   async _onReset() {
     if (this._confirmDialogOpen) return;
 
@@ -184,9 +148,9 @@ class AppView extends LitElement {
     try {
       const confirmed = await dialog.show({
         title: '',
-        message: 'Are you sure you want to clear the game scores? This cannot be undone.',
-        confirmLabel: 'Clear Scores',
-        cancelLabel: 'Cancel',
+        message: t('dialog.clearConfirm'),
+        confirmLabel: t('dialog.clearConfirmLabel'),
+        cancelLabel: t('button.cancel'),
         variant: 'danger',
         showCancel: true,
       });
@@ -200,59 +164,59 @@ class AppView extends LitElement {
     }
   }
 
-  _onAddPlayer() {
-    this.appState.addPlayer();
-  }
+  async _onAddPlayer() {
+    if (this._addPlayerDialogOpen) return;
 
-  _onPlayerNameClick(e) {
-    this.editingPlayer = e.detail.player;
-    this.tempPlayerName = this.editingPlayer.name;
-    this.showPlayerNameModal = true;
-    this.requestUpdate();
-  }
+    const dialog = this.renderRoot?.querySelector('#add-player-dialog');
+    if (!dialog) return;
 
-  _onPlayerNameModalClose() {
-    this.showPlayerNameModal = false;
-    this.editingPlayer = null;
-    this.tempPlayerName = '';
-  }
-
-  _onPlayerNameSave(e) {
-    //console.log(`Saving player ${e.detail.player.id} with name ${e.detail.newName}`);
-    if (e.detail.newName !== this.editingPlayer.name) {
-      this.appState.changePlayerName(e.detail.player, e.detail.newName);
+    this._addPlayerDialogOpen = true;
+    try {
+      const result = await dialog.show();
+      if (result.add) {
+        this.appState.addPlayer(result.name);
+      }
+    } finally {
+      this._addPlayerDialogOpen = false;
     }
-
-    this._onPlayerNameModalClose();
   }
 
-  _onPlayerDelete(e) {
-    this.appState.removePlayer(e.detail.playerId);
-    this._onPlayerNameModalClose();
-  }
-
-  _onPlayerScoreClick(e) {
-    this.editingPlayer = e.detail.player;
-    this.tempPlayerScore = this.editingPlayer.bankedScore;
-    this.showPlayerScoreModal = true;
-    this.requestUpdate();
-  }
-
-  _onPlayerScoreModalClose() {
-    this.showPlayerScoreModal = false;
-    this.editingPlayer = null;
-    this.tempPlayerScore = 0;
-  }
-
-  _onPlayerScoreSave(e) {
-    //console.log(`Saving player ${e.detail.player.id} with score ${e.detail.newScore}`);
-    if (e.detail.newScore !== this.editingPlayer.bankedScore) {
-      const scoreToAdd = e.detail.newScore - this.editingPlayer.bankedScore;
-      this.appState.addPlayerScore(e.detail.player, scoreToAdd);
-      LogEvent('player_score_changed');
+  async _onPlayerNameClick(e) {
+    if (this._editNameDialogOpen) return;
+    const modal = this.renderRoot?.querySelector('#edit-name-dialog');
+    if (!modal) return;
+    this._editNameDialogOpen = true;
+    try {
+      const result = await modal.show({ player: e.detail.player });
+      if (result?.action === 'save') {
+        if (result.newName !== e.detail.player.name) {
+          this.appState.changePlayerName(e.detail.player, result.newName);
+        }
+      } else if (result?.action === 'delete') {
+        this.appState.removePlayer(result.playerId);
+      }
+    } finally {
+      this._editNameDialogOpen = false;
     }
+  }
 
-    this._onPlayerScoreModalClose();
+  async _onPlayerScoreClick(e) {
+    if (this._editScoreDialogOpen) return;
+    const modal = this.renderRoot?.querySelector('#edit-score-dialog');
+    if (!modal) return;
+    this._editScoreDialogOpen = true;
+    try {
+      const result = await modal.show({ player: e.detail.player });
+      if (result?.action === 'save') {
+        const player = e.detail.player;
+        if (result.newScore !== player.bankedScore) {
+          this.appState.addPlayerScore(player, result.newScore - player.bankedScore);
+          LogEvent('player_score_changed');
+        }
+      }
+    } finally {
+      this._editScoreDialogOpen = false;
+    }
   }
 
   _onInOutClick(e) {

@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { headerButtonStyles } from './shared-styles.js';
+import { t } from './i18n.js';
 
 export class UndoButton extends LitElement {
   static properties = {
@@ -23,9 +24,9 @@ export class UndoButton extends LitElement {
   render() {
     return html`
       <button 
-        @click=${this._handleClick.bind(this)} 
+        @click=${this._handleClick}
         ?disabled=${this.disabled}
-        >Undo</button>
+        >${t('button.undo')}</button>
     `;
   }
 

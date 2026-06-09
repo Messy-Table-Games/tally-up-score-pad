@@ -3,6 +3,7 @@ import '../src/in-out-button.js';
 export default {
   title: 'InOutButton',
   component: 'in-out-button',
+  tags: ['autodocs'],
   argTypes: {
     status: {
       control: { type: 'radio' },

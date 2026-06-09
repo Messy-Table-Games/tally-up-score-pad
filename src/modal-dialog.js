@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import { t } from './i18n.js';
 
 class ModalDialog extends LitElement {
   static properties = {
@@ -24,7 +25,7 @@ class ModalDialog extends LitElement {
     }
 
     .modal-content {
-      padding: 20px;
+      padding: var(--modal-content-padding, 20px);
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -66,6 +67,21 @@ class ModalDialog extends LitElement {
 
     .close-button:active {
       background-color: #e5e5e5;
+    }
+
+    .close-button:focus {
+      outline: none;
+    }
+
+    .close-button:focus-visible {
+      outline: 2px solid #0b5fff;
+      outline-offset: 2px;
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      .close-button:focus-visible {
+        outline: none;
+      }
     }
 
     .modal-body {
@@ -137,7 +153,7 @@ class ModalDialog extends LitElement {
             ? html`
                 <div class="modal-header">
                   <h2>${this.title}</h2>
-                  <button class="close-button" @click=${this.close} aria-label="Close">×</button>
+                  <button class="close-button" @click=${this.close} aria-label=${t('button.close')}>×</button>
                 </div>
               `
             : null}

@@ -1,4 +1,5 @@
 import { makeAutoObservable, makeObservable, observable, action, computed } from 'mobx';
+import { t } from './i18n.js';
 
 const DEFAULT_STORAGE_KEY = 'TallyUpModel';
 const PLAYER_NAME_MAX_LENGTH = 50;
@@ -233,7 +234,7 @@ export class Game {
  */
 function AddPlayer(game, newPlayer = null, atIndex = -1) {
   if (!newPlayer) {
-    const defaultName = `Player ${game.players.length + 1}`;
+    const defaultName = t('player.defaultName', { number: game.players.length + 1 });
     newPlayer = new Player(defaultName);
   }
   if (atIndex === -1) {
@@ -285,7 +286,6 @@ class CommandStack {
     makeObservable(this, {
       _length: observable,
       canUndo: computed,
-      canRedo: computed,
     });
   }
 
@@ -320,13 +320,8 @@ class CommandStack {
     }
   }
 
-
   get canUndo() {
     return this._length > 0;
-  }
-
-  get canRedo() {
-    return false;
   }
 
   get undoConfirmationMessage() {
@@ -375,10 +370,6 @@ class CommandStack {
       this.clear();
     }
   }
-
-  redo() {
-    // Not implemented
-  } 
 
   getHeadIndex() {
     return (this._startIndex + this._length - 1) % CommandStack.MAX_LENGTH; 
@@ -508,9 +499,7 @@ export class AppState {
       bustGameRound: action,
       endGameRound: action,
       undo: action,
-      redo: action,
       canUndo: computed,
-      canRedo: computed,
       canBust: computed,
       canNext: computed,
       canRoll: computed
@@ -555,8 +544,8 @@ export class AppState {
     this.saveState();
   }
 
-  addPlayer() {
-    const command = new AddPlayerCommand(this.game);
+  addPlayer(name = null) {
+    const command = new AddPlayerCommand(this.game, name);
     this._commandStack.execute(command);
   }
 
@@ -615,16 +604,8 @@ export class AppState {
     this._commandStack.undo();
   }
 
-  redo() {
-    this._commandStack.redo();
-  }
-
   get canUndo() {
     return this._commandStack.canUndo;
-  }
-
-  get canRedo() {
-    return this._commandStack.canRedo;
   }
 
   get undoConfirmationMessage() {
@@ -650,14 +631,16 @@ export class AppState {
 export class AddPlayerCommand {
   static name = 'AddPlayerCommand';
 
-  constructor(game) {
+  constructor(game, name = null) {
     this.game = game;
     this.player = null;
     this.playerIndex = -1;
+    this.name = name;
   }
 
   execute() {
-    const playerInfo = AddPlayer(this.game);
+    const player = this.name ? new Player(this.name) : null;
+    const playerInfo = AddPlayer(this.game, player);
     this.player = playerInfo.player;
     this.player.pendingScore = this.game.pendingRollScore;
     this.playerIndex = playerInfo.index;
@@ -673,10 +656,8 @@ export class AddPlayerCommand {
   }
 
   get undoConfirmationMessage() {
-    if (!this.player?.name) {
-      return 'Undo adding a player?';
-    }
-    return `Undo adding ${this.player.name}?`;
+    if (!this.player?.name) return t('undo.addPlayerUnknown');
+    return t('undo.addPlayer', { name: this.player.name });
   }
 
   serialize() {
@@ -735,10 +716,8 @@ export class RemovePlayerCommand {
   }
 
   get undoConfirmationMessage() {
-    if (!this.player?.name) {
-      return 'Undo deleting a player?';
-    }
-    return `Undo deleting ${this.player.name}?`;
+    if (!this.player?.name) return t('undo.deletePlayerUnknown');
+    return t('undo.deletePlayer', { name: this.player.name });
   }
 
   serialize() {
@@ -790,7 +769,7 @@ export class ChangePlayerNameCommand {
   }
 
   get undoConfirmationMessage() {
-    return `Undo setting player name to ${this.newName}?`;
+    return t('undo.renamePlayer', { name: this.newName });
   }
 
   serialize() {
@@ -841,10 +820,9 @@ export class ChangePlayerStatusCommand {
   }
 
   get undoConfirmationMessage() {
-    if (!this.player?.name) {
-      return `Undo setting player status to ${this.newStatus.toUpperCase()}?`;
-    }
-    return `Undo setting ${this.player.name} to ${this.newStatus.toUpperCase()}?`;
+    const status = t('status.' + this.newStatus);
+    if (!this.player?.name) return t('undo.setStatusUnknown', { status });
+    return t('undo.setStatus', { name: this.player.name, status });
   }
 
   serialize() {
@@ -1009,7 +987,7 @@ export class TallyUpCommand {
   }
 
   get undoConfirmationMessage() {
-    return 'Undo Tally Up?';
+    return t('undo.tallyUp');
   }
 
   serialize() {
@@ -1058,10 +1036,8 @@ export class AddScoreCommand {
   }
 
   get undoConfirmationMessage() {
-    if (!this.player?.name) {
-      return `Undo setting player's score?`;
-    }
-    return `Undo setting the score for ${this.player.name} to ${this.player.pendingTotalScore}?`;
+    if (!this.player?.name) return t('undo.setScoreUnknown');
+    return t('undo.setScore', { name: this.player.name, score: this.player.pendingTotalScore });
   }
 
   serialize() {
@@ -1118,7 +1094,7 @@ export class AddGameRollCommand {
   }
 
   get undoConfirmationMessage() {
-    return `Undo dice roll of ${this.roll}?`;
+    return t('undo.diceRoll', { value: this.roll });
   }
 
   serialize() {
@@ -1181,7 +1157,7 @@ export class EndRoundCommand {
   }
 
   get undoConfirmationMessage() {
-    return `Undo Next?`;
+    return t('undo.next');
   }
 
   serialize() {
@@ -1237,7 +1213,7 @@ export class BustRoundCommand {
   }
 
   get undoConfirmationMessage() {
-    return `Undo Bust?`;
+    return t('undo.bust');
   }
 
   serialize() {

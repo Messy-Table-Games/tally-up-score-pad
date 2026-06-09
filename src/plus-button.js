@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit';
+import { t } from './i18n.js';
 
 export class PlusButton extends LitElement {
   static properties = {
@@ -19,6 +20,7 @@ export class PlusButton extends LitElement {
       border: none;
       background: none;
       padding: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
     .svg-btn:active {
       filter: brightness(0.8);
@@ -40,8 +42,6 @@ export class PlusButton extends LitElement {
         class="svg-btn"
         style="width:${diameter}px;height:${diameter}px;"
         @click=${this._onClick}
-        title="Add"
-        aria-label="Add"
       >
         <svg
           viewBox="0 0 ${diameter} ${diameter}"

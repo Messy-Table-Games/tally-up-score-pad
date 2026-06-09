@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { t } from './i18n.js';
+import { starSvgStr } from './shared-styles.js';
+
+const tupButtonHtml = `<span style="display:inline-flex;align-items:center;gap:2px;border:1px solid #f29678;border-radius:16px;padding:0 2px;margin-bottom:2px;height:1em;color:#f05422;background:#fff;vertical-align:middle"><span style="display:inline-flex;align-items:center;gap:3px;transform:scale(.8);transform-origin:50% 50%;">${starSvgStr}${starSvgStr}${starSvgStr}</span></span>`;
 
 export class HelpCard extends LitElement {
-  static properties = {
-    showClose: { type: Boolean, attribute: 'show-close' },
-  };
   static styles = [
     css`
       :host {
@@ -14,12 +16,13 @@ export class HelpCard extends LitElement {
         padding: 8px;
         margin: 0 30px;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.95);
+        background: #ffffff;
         border: 1px solid rgba(255, 255, 255, 0.7);
         font-size: 14px;
         line-height: 1.4;
         color: #333;
         max-width: 400px;
+        box-shadow: 0 0px 6px rgba(0, 0, 0, 0.15);
       }
 
       h3 {
@@ -76,37 +79,20 @@ export class HelpCard extends LitElement {
       button:active { 
         filter: brightness(0.92); 
       }
+      .in {
+        color: #388e3c;
+      }
+
+      .out {
+        color: #d32f2f;
+      }
     `
   ];
 
-  constructor() {
-    super();
-    this.showClose = false;
-  }
-  
   render() {
     return html`
-      <ul>
-        <li>Tap the plus to add a player.</li>
-        <li>Tap a player name to change the name or delete a player.</li>
-        <li>Tap on a player's score to manually change their score.</li>
-        <li>Tap on a dice roll number in the button pad to add it to the running total.</li>
-        <li>Tap the <b>IN/OUT</b> button for a player to change their status.</li>
-        <li>Tap <b>Bust</b> when a bust occurs. <em>A bust occurs when 2 stars are rolled in the Main roll, or 2 or more stars are shown after the Up die roll.</em></li>
-        <li>Tap <b>Next</b> if all players have gone <b>OUT</b>.</li>
-        <li>Tap <b>TUP!</b> for the player that yells Tally Up! first. This will add 200 points to their score, and then adds 100 points to the scores for all other players still <b>IN</b>. <em>A Tally Up! occurs when 3 stars are rolled in the Main roll.</em></li>
-        <li>Tap <b>Undo</b> to revert the last action.</li>
-        <li>Tap <b>Clear</b> to reset all scores to 0 for a new game.</li>
-      </ul>
-      ${this.showClose ? html`<button @click=${this._onClose}>Close</button>` : ''}
+      ${unsafeHTML(t('help.content', { tupButton: tupButtonHtml }))}
     `;
-  }
-
-  _onClose() {
-    this.dispatchEvent(new CustomEvent('close-help', {
-      bubbles: true,
-      composed: true
-    }));
   }
 }
 

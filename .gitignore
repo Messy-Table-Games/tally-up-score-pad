@@ -1,3 +1,5 @@
+.env
+
 ## editors
 /.idea
 /.vscode
@@ -48,3 +50,5 @@ ui-debug.log
 firebase-debug.log
 
 *storybook.log
+
+CLAUDE.md
