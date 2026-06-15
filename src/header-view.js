@@ -25,19 +25,22 @@ export class HeaderView extends LitElement {
       display: block;
       box-sizing: border-box;
       width: 100%;
-      min-width: 320px;
+      min-width: 0;
       font-size: 16px;
       padding: 8px;
       background: linear-gradient(180deg, #fff45f 0%, #ffe465 100%);
     }
     .header-grid {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: 1fr minmax(0, auto) 1fr;
       align-items: center;
-      gap: 0px;
+      gap: 6px;
     }
     .logo {
-      height: 28px;
+      max-height: 28px;
+      max-width: 100%;
+      height: auto;
+      width: auto;
     }
     reset-button {
       justify-self: end;

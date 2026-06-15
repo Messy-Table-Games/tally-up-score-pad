@@ -10,13 +10,16 @@ export class ButtonPad extends LitElement {
 
   static styles = css`
     :host {
+      display: block;
       width: 100%;
       background: linear-gradient(180deg, #fcb948 0%, #f05023 100%);
+      container-type: inline-size;
+      container-name: button-pad;
     }
 
     .pad {
       width: 100%;
-      min-width: 320px;
+      min-width: 0;
       box-sizing: border-box;
       padding: 8px;
       display: flex;
@@ -26,7 +29,7 @@ export class ButtonPad extends LitElement {
 
     .top-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(50px, 1fr));
       gap: 8px;
     }
 
@@ -34,6 +37,18 @@ export class ButtonPad extends LitElement {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
+    }
+
+    @container button-pad (max-width: 300px) {
+      .top-grid {
+        grid-template-columns: repeat(4, minmax(50px, 1fr));
+      }
+    }
+
+    @container button-pad (max-width: 240px) {
+      .top-grid {
+        grid-template-columns: repeat(3, minmax(50px, 1fr));
+      }
     }
   `;
 

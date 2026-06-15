@@ -2,12 +2,13 @@ import { makeObservable, observable, action } from 'mobx';
 import enStrings from './locales/en.json' with { type: 'json' };
 import esStrings from './locales/es.json' with { type: 'json' };
 import deStrings from './locales/de.json' with { type: 'json' };
+import frStrings from './locales/fr.json' with { type: 'json' };
 
 const LOCALE_REGISTRY = {
+  de: { name: 'Deutsch',  strings: deStrings },
   en: { name: 'English',  strings: enStrings },
   es: { name: 'Español',  strings: esStrings },
-  de: { name: 'Deutsch',  strings: deStrings },
-  // fr: { name: 'Français', strings: frStrings },
+  fr: { name: 'Français', strings: frStrings },
 };
 
 export const SUPPORTED_LOCALES = Object.keys(LOCALE_REGISTRY);

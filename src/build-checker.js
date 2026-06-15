@@ -1,5 +1,9 @@
 import { APP_BUILD_NUMBER } from './build-number.js';
 
+export function isValidBuildNumber(s) {
+  return /^\d{8}(-\d+)?$/.test(s);
+}
+
 const BUILD_NUMBER_URL = '/build.txt';
 const CHECK_INTERVAL = 30 * 60 * 1000;
 
@@ -10,9 +14,13 @@ async function isNewBuildAvailable() {
       return false;
     }
 
-    const serverBuildNumber = (await response.text()).trim();
+    const serverBuildNumber = (await response.text()).slice(0, 20).trim();
 
-    //console.log(`server build number: ${serverBuildNumber}`);
+    // Guards against a captive portal that returns html or invalid text content
+    if (!isValidBuildNumber(serverBuildNumber)) {
+      return false;
+    }
+    
     //console.log(`app build number: ${APP_BUILD_NUMBER}`);
     if (serverBuildNumber !== APP_BUILD_NUMBER) {
       console.log(`new build detected. from ${APP_BUILD_NUMBER} to ${serverBuildNumber}`);

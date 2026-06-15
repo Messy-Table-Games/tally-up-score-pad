@@ -17,6 +17,13 @@ export class PlayerCard extends LitElement {
 
   static styles = css`
     :host {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+      container-type: inline-size;
+      container-name: player-card;
+    }
+    .card {
       font-size: 16px;
       box-sizing: border-box;
       display: flex;
@@ -30,6 +37,12 @@ export class PlayerCard extends LitElement {
       gap: 8px;
       width: 100%;
       border: none;
+    }
+    @container player-card (max-width: 304px) {
+      .card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
     .player-info {
       flex: 1;
@@ -184,24 +197,26 @@ export class PlayerCard extends LitElement {
     const bankedScoreClass = 'banked-score' + this._bankedScoreChanged;
     
     return html`
-      <div class="player-info">
-        <div class="player-name" @click=${this._onNameClick}>${this.player.name}</div>
-        <div class="score-row">
-          <div class="${bankedScoreClass}" @click=${this._onScoreClick}>
-            ${this.player.bankedScore}
+      <div class="card">
+        <div class="player-info">
+          <div class="player-name" @click=${this._onNameClick}>${this.player.name}</div>
+          <div class="score-row">
+            <div class="${bankedScoreClass}" @click=${this._onScoreClick}>
+              ${this.player.bankedScore}
+            </div>
+            ${showPendingTotal ? html`
+              <span class="pending-arrow">${arrowSvg}</span>
+              <span class="pending-score">${this.player.pendingTotalScore}</span>` 
+              : ''}   
           </div>
-          ${showPendingTotal ? html`
-            <span class="pending-arrow">${arrowSvg}</span>
-            <span class="pending-score">${this.player.pendingTotalScore}</span>` 
-            : ''}   
         </div>
-      </div>
-      <div class="buttons">
-        <tally-up-button @tally-up-button-click=${this._onTUP}></tally-up-button>
-        <in-out-button
-          .status=${this.player.status}
-          @inout-button-click=${this._onInOut}
-        ></in-out-button>
+        <div class="buttons">
+          <tally-up-button @tally-up-button-click=${this._onTUP}></tally-up-button>
+          <in-out-button
+            .status=${this.player.status}
+            @inout-button-click=${this._onInOut}
+          ></in-out-button>
+        </div>
       </div>
     `;
   }

@@ -26,7 +26,7 @@ export class Scoreboard extends LitElement {
         background: #f0eff5;
         gap: 8px;
         width: 100%;
-        min-width: 301px;
+        min-width: 0;
         overflow: auto;
         max-height: 100%;
       }

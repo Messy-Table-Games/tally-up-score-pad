@@ -1,0 +1,57 @@
+{
+  "game.name": "Tally Up",
+
+  "button.undo": "Annuler",
+  "button.clear": "Effacer",
+  "button.close": "Fermer",
+  "button.ok": "OK",
+  "button.cancel": "Annuler",
+  "button.saveChanges": "Sauvegarder",
+  "button.deletePlayer": "Supprimer un joueur",
+  "button.confirmDelete": "Confirmer la suppression",
+  "button.showHelp": "Afficher l'aide",
+  "button.hideHelp": "Masquer l'aide",
+
+  "diceButton.bust": "Dé-bâcle",
+  "diceButton.next": "Suivant",
+  "diceButton.value": "Valeur des dés {{value}}",
+
+  "label.playerName": "Nom du joueur :",
+  "label.playerScore": "Score du joueur :",
+  "label.scoreInputPlaceholder": "Score",
+  "label.addPlayer": "Ajouter un joueur",
+  "label.pendingScore": "Score en attente",
+  "label.pendingRolls": "Lancers en attente",
+  "label.rollsPlaceholder": "Lancers",
+  "label.total": "Total: {{sum}}",
+
+  "dialog.undoDefault": "Êtes-vous sûr de vouloir annuler la dernière action ?",
+  "dialog.clearConfirm": "Êtes-vous sûr de vouloir effacer tous les scores ? Cette action ne pourra pas être annulée.",
+  "dialog.clearConfirmLabel": "Effacer les scores",
+
+  "undo.addPlayer": "Annuler l'ajout de {{name}} ?",
+  "undo.addPlayerUnknown": "Annuler l'ajout d'un joueur ?",
+  "undo.deletePlayer": "Annuler la suppression de {{name}} ?",
+  "undo.deletePlayerUnknown": "Annuler la suppression d'un joueur ?",
+  "undo.renamePlayer": "Annuler le nouveau nom de {{name}} ?",
+  "undo.setStatus": "Annuler le statut {{status}} de {{name}} ?",
+  "undo.setStatusUnknown": "Annuler le changement de statut {{status}} du joueur ?",
+  "undo.setScore": "Annuler le changement de score de {{name}} en {{score}} ?",
+  "undo.setScoreUnknown": "Annuler le changement du score du joueur ?",
+  "undo.diceRoll": "Annuler le lancer de dé de valeur {{value}} ?",
+  "undo.next": "Annuler Suivant ?",
+  "undo.bust": "Annuler la Dé-Bâcle ?",
+  "undo.tallyUp": "Annuler le Jackpot ?",
+
+  "status.in": "ENCORE",
+  "status.out": "STOP",
+
+  "player.defaultName": "Joueur {{number}}",
+
+  "help.content": "<ul><li>Appuyez sur le nom d'un joueur pour le supprimer ou changer son nom.</li><li>Sur le clavier, appuyez sur le résultat du lancer de dé pour l'ajouter au total provisoire.</li><li>Appuyez sur le bouton <b><span class='out'>STOP</span> / <span class='in'>ENCORE</span></b> pour changer le statut d'un joueur.</li><li>Appuyez sur <b>Dé-bâcle</b> quand une dé-bâcle est déclenchée. <em>Une dé-bâcle se produit quand vous obtenez 2 étoiles au lancer principal, ou au moins 2 étoiles après le lancer du dé Imprévisible.</em></em></li><li>Appuyez sur <b>Suivant</b> si tous les joueurs ont choisi <b><span class='out'>STOP</span></b>.</li><li>Appuyez sur {{tupButton}} pour le joueur qui a crié \"Jackpot !\" en premier. Il gagne ainsi 200 points, et les autres joueurs encore en lice (<b><span class='in'>ENCORE</span></b>) gagnent 100 points. <em>Un Jackpot se produit quand vous obtenez 3 étoiles au lancer principal.</em></li><li>Appuyez sur le score d'un joueur pour le changer manuellement.</li><li>Appuyez sur <b>Annuler</b> pour annuler la dernière action.</li><li>Appuyez sur <b>Effacer</b> pour remettre tous les scores à 0 et lancer une nouvelle partie.</li></ul>",
+
+  "page.title": "Tally Up Score Pad",
+  "page.description": "A score keeping app for Tally Up",
+
+  "locale.label": "Language"
+}

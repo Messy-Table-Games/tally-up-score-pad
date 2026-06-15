@@ -153,8 +153,8 @@ export class Player {
     this.id = data.id;
     this.name = data.name;
     this.status = data.status;
-    this.pendingScore = data.pendingScore;
-    this.score = data.score;
+    this.pendingScore = data.pendingScore ?? 0;
+    this.score = data.score ?? 0;
   }
 }
 
@@ -943,7 +943,7 @@ export class BankPendingScoreCommand {
     if (!player) return null;
 
     const cmd = new BankPendingScoreCommand(player);
-    cmd.oldPendingScore = data.oldPendingScore;
+    cmd.oldPendingScore = data.oldPendingScore ?? 0;
     return cmd;
   }
 }
@@ -1054,7 +1054,7 @@ export class AddScoreCommand {
     const player = game.players.find(p => p.id === data.playerId);
     if (!player) return null;
     
-    return new AddScoreCommand(player, data.score);
+    return new AddScoreCommand(player, data.score ?? 0);
   }
 }
 

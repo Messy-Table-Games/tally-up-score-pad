@@ -10,7 +10,7 @@
     "build": "webpack --config webpack/webpack.prod.js",
     "build:staging": "webpack --config webpack/webpack.staging.js",
     "storybook": "storybook dev -p 6006",
-    "tests": "node tests/model_tests.js && node tests/locale_tests.js"
+    "tests": "node tests/test_main.js"
   },
   "dependencies": {
     "lit": "^3.3.3",

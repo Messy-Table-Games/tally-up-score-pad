@@ -1,3 +1,8 @@
+import { ComputePendingRollScore, Player, Game, AddPlayerCommand, RemovePlayerCommand, ChangePlayerNameCommand, ChangePlayerStatusCommand, SetPendingScoreCommand, BankPendingScoreCommand, TallyUpCommand, AddScoreCommand, AddGameRollCommand, EndRoundCommand, BustRoundCommand, AppState } from '../src/model.js';
+import { isValidBuildNumber } from '../src/build-checker.js';
+import { TestCondition, registerTest } from './test_harness.js';
+import fs from 'fs';
+
 // Mock localStorage for Node.js
 const gLocalStorage = new Map();
 
@@ -20,34 +25,6 @@ function injectLocalStorage(storageMap) {
 }
 
 injectLocalStorage(gLocalStorage);
-
-import { ComputePendingRollScore, Player, Game, AddPlayerCommand, RemovePlayerCommand, ChangePlayerNameCommand, ChangePlayerStatusCommand, SetPendingScoreCommand, BankPendingScoreCommand, TallyUpCommand, AddScoreCommand, AddGameRollCommand, EndRoundCommand, BustRoundCommand, AppState } from '../src/model.js';
-import fs from 'fs';
-
-let gTestResults = {
-  total: 0,
-  passed: 0,
-  failed: 0
-};
-
-function TestCondition(condition, message) {
-  if (condition) {
-    console.log(`${message}: \x1b[32mPASS\x1b[0m`);
-    gTestResults.passed++;
-  } else {
-    console.log(`${message}: \x1b[31mFAIL\x1b[0m`);
-    gTestResults.failed++;
-  }
-  gTestResults.total++;
-}
-
-// Map to store tests
-const gTests = new Map();
-
-// Function to register a test
-function registerTest(name, func) {
-  gTests.set(name, func);
-}
 
 // Test for AddPlayerCommand
 registerTest('testAddPlayerCommand', function() {
@@ -866,18 +843,19 @@ registerTest('testAppStateFullGameFlow', function() {
   // }
 });
 
-// Run all tests
-for (let [name, func] of gTests) {
-  func();
-}
+registerTest('testIsValidBuildNumber', function() {
+  TestCondition(isValidBuildNumber('20261224'), 'testIsValidBuildNumber - date only');
+  TestCondition(isValidBuildNumber('20260612-2'), 'testIsValidBuildNumber - date with single-digit suffix');
+  TestCondition(isValidBuildNumber('20260101-10'), 'testIsValidBuildNumber - date with multi-digit suffix');
 
-// Pretty print test summary
-console.log('\n\x1b[1mTest Results:\x1b[0m');
-console.log(`  Total:  ${gTestResults.total}`);
-console.log(`  Passed: \x1b[32m${gTestResults.passed}\x1b[0m`);
-if (gTestResults.failed > 0) {
-  console.log(`  Failed: \x1b[31m${gTestResults.failed}\x1b[0m\n`);
-} else {
-  console.log(`  Failed: ${gTestResults.failed}\n`);
-}
+  TestCondition(!isValidBuildNumber(''), 'testIsValidBuildNumber - empty string');
+  TestCondition(!isValidBuildNumber('abc'), 'testIsValidBuildNumber - arbitrary text');
+  TestCondition(!isValidBuildNumber('<!DOCTYPE html>'), 'testIsValidBuildNumber - HTML content');
+  TestCondition(!isValidBuildNumber('2026122'), 'testIsValidBuildNumber - 7 digits too short');
+  TestCondition(!isValidBuildNumber('202612240'), 'testIsValidBuildNumber - 9 digits too long');
+  TestCondition(!isValidBuildNumber('20261224-'), 'testIsValidBuildNumber - trailing dash no number');
+  TestCondition(!isValidBuildNumber('20261224-abc'), 'testIsValidBuildNumber - non-numeric suffix');
+  TestCondition(!isValidBuildNumber('20261224-2abc'), 'testIsValidBuildNumber - numeric suffix with trailing non-numeric');
+});
+
 

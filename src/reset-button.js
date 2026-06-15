@@ -7,6 +7,7 @@ export class ResetButton extends LitElement {
     css`
       :host {
         display: inline-block;
+        white-space: nowrap;
       }
     `, 
     headerButtonStyles

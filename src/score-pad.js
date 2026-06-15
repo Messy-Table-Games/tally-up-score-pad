@@ -19,6 +19,7 @@ export class ScorePad extends LitElement {
       display: grid;
       height: 100%;
       width: 100%;
+      min-width: 218px;
       gap: 0px;
       background-color: #f0eff5;
       touch-action: manipulation; /* Helps prevent double tap zoom on iOS */

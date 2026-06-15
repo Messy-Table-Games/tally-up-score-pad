@@ -1,32 +1,10 @@
 import { SUPPORTED_LOCALES } from '../src/i18n.js';
+import { TestCondition, registerTest } from './test_harness.js';
 import fs from 'fs';
 import path from 'path';
 
 const LOCALES_DIR = new URL('../src/locales/', import.meta.url).pathname;
 const VALID_STATUSES = ['in', 'out'];
-
-let gTestResults = {
-  total: 0,
-  passed: 0,
-  failed: 0
-};
-
-function TestCondition(condition, message) {
-  if (condition) {
-    console.log(`${message}: \x1b[32mPASS\x1b[0m`);
-    gTestResults.passed++;
-  } else {
-    console.log(`${message}: \x1b[31mFAIL\x1b[0m`);
-    gTestResults.failed++;
-  }
-  gTestResults.total++;
-}
-
-const gTests = new Map();
-
-function registerTest(name, func) {
-  gTests.set(name, func);
-}
 
 function loadLocaleFiles() {
   const langs = fs.readdirSync(LOCALES_DIR)
@@ -99,16 +77,3 @@ registerTest('All parametrized strings replace placeholders correctly', () => {
   }
 });
 
-for (let [name, func] of gTests) {
-  func();
-}
-
-console.log('\n\x1b[1mTest Results:\x1b[0m');
-console.log(`  Total:  ${gTestResults.total}`);
-console.log(`  Passed: \x1b[32m${gTestResults.passed}\x1b[0m`);
-if (gTestResults.failed > 0) {
-  console.log(`  Failed: \x1b[31m${gTestResults.failed}\x1b[0m\n`);
-  process.exit(1);
-} else {
-  console.log(`  Failed: ${gTestResults.failed}\n`);
-}
