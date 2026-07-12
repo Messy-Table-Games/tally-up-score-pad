@@ -1,0 +1,57 @@
+{
+  "game.name": "Tally Up",
+
+  "button.undo": "Terug",
+  "button.clear": "Clear",
+  "button.close": "Sluiten",
+  "button.ok": "Oke",
+  "button.cancel": "Annuleer",
+  "button.saveChanges": "Wijzigingen opslaan",
+  "button.deletePlayer": "Speler verwijderen",
+  "button.confirmDelete": "Bevestigen",
+  "button.showHelp": "Help",
+  "button.hideHelp": "Verberg Help",
+
+  "diceButton.bust": "Bust",
+  "diceButton.next": "Volgende",
+  "diceButton.value": "Dobbelsteen waarde {{value}}",
+
+  "label.playerName": "Speler Naam",
+  "label.playerScore": "Speler Score",
+  "label.scoreInputPlaceholder": "Score",
+  "label.addPlayer": "Speler Toevoegen",
+  "label.pendingScore": "Punten in afwachting",
+  "label.pendingRolls": "Rollen in afwachting",
+  "label.rollsPlaceholder": "Rollen",
+  "label.total": "Totaal: {{sum}}",
+
+  "dialog.undoDefault": "Wil je de stap ongedaan maken?",
+  "dialog.clearConfirm": "Weet je zeker dat je de spelscores wilt wissen? Deze actie kan niet ongedaan worden gemaakt.",
+  "dialog.clearConfirmLabel": "Wis Spelscores",
+
+  "undo.addPlayer": "Toevoegen van {{name}} ongedaan maken?",
+  "undo.addPlayerUnknown": "Toevoegen van speler ongedaan maken?",
+  "undo.deletePlayer": "Verwijderen van {{name}} ongedaan maken?",
+  "undo.deletePlayerUnknown": "Verwijderen van speler ongedaan maken?",
+  "undo.renamePlayer": "Wijzigen van de spelersnaam naar {{name}} ongedaan maken?",
+  "undo.setStatus": "Wijzigen van {{name}} naar {{status}} ongedaan maken?",
+  "undo.setStatusUnknown": "Wijzigen van de spelersstatus naar {{status}} ongedaan maken?",
+  "undo.setScore": "Wijzigen van de score van {{name}} naar {{score}} ongedaan maken?",
+  "undo.setScoreUnknown": "Wijzigen van de spelersscore ongedaan maken?",
+  "undo.diceRoll": "Dobbelworp van {{value}} ongedaan maken?",
+  "undo.next": "Volgende' ongedaan maken?",
+  "undo.bust": "Bust' ongedaan maken?",
+  "undo.tallyUp": "Tally Up ongedaan maken?",
+
+  "status.in": "IN",
+  "status.out": "UIT",
+
+  "player.defaultName": "Speler {{number}}",
+
+  "help.content": "<ul><li>Tik op de naam van een speler om de naam te wijzigen of de speler te verwijderen.</li><li>Tik op een dobbelsteenwaarde in het toetsenpaneel om deze toe te voegen aan het lopende totaal.</li><li>Tik op de knop <b><span class='in'>IN</span> / <span class='out'>UIT</span></b> van een speler om de status te wijzigen.</li><li>Tik op <b>Bust</b> wanneer een bust plaatsvindt. <em>Een bust treedt op wanneer er 2 sterren worden gegooid bij de hoofdworp, of wanneer er na de Up-worp 2 of meer sterren zichtbaar zijn.</em></li><li>Tik op <b>Volgende</b> als alle spelers <b><span class='out'>UIT</span></b> zijn.</li><li>Tik op {{tupButton}} voor de speler die als eerste \"Tally Up!\" roept. Er worden dan 200 punten aan de score van die speler toegevoegd en vervolgens 100 punten aan de scores van alle andere spelers die nog <b><span class='in'>IN</span></b> zijn. <em>Een Tally Up! vindt plaats wanneer er 3 sterren worden gegooid bij de hoofdworp.</em></li><li>Tik op de score van een speler om deze handmatig te wijzigen.</li><li>Tik op <b>Ongedaan maken</b> om de laatste actie terug te draaien.</li><li>Tik op <b>Wissen</b> om alle scores terug te zetten naar 0 voor een nieuw spel.</li></ul>",
+
+  "page.title": "Tally Up Scoreblad",
+  "page.description": "De score app van Tally Up",
+
+  "locale.label": "Taal"
+}
