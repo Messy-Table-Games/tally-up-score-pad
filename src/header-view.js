@@ -6,12 +6,14 @@ import { i18nStore, t } from './i18n.js';
 // Add locale-specific logos as they become available:
 import logoEn from '../assets/tup-logo.png';
 import logoEs from '../assets/tup-logo-es.png';
+import logoFr from '../assets/tup-logo-fr.png';
 
 // import logoFr from '../assets/tup-logo-fr.png';
 
 // Maps locale codes to their logo asset. Omitted locales fall back to logoEn.
 const LOCALE_LOGOS = {
   es: logoEs,
+  fr: logoFr,
 };
 
 
