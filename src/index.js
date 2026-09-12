@@ -1,5 +1,5 @@
 import './app-view.js';
-import { startBuildChecker, checkForNewBuildNow, reloadForNewBuild } from './build-checker.js';
+import { isNewBuildAvailable, startBuildChecker, reloadForNewBuild } from './build-checker.js';
 import { t, i18nStore } from './i18n.js';
 
 if (window.location.pathname !== '/') {
@@ -50,10 +50,9 @@ function newBuildIsAvailable() {
   gServiceWorkerReg.update();
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    checkForNewBuildNow(newBuildIsAvailable);
-  }
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden) return;
+  if (await isNewBuildAvailable()) newBuildIsAvailable();
 });
 
 registerServiceWorker();
