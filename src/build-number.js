@@ -1,1 +1,1 @@
-export const APP_BUILD_NUMBER = '20260828';
+export const APP_BUILD_NUMBER = '20260912';
