@@ -7,7 +7,9 @@ module.exports = merge(common, {
   devtool: 'inline-source-map',
   devServer: {
     static: './dist',
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    // Explicit so we don't land on webpack-dev-server's 8080 default.
+    port: 5197
   },
   plugins: [
     new webpack.DefinePlugin({
