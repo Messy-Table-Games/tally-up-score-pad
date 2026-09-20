@@ -1,4 +1,6 @@
 .env
+# Per-machine dev server port override; never commit it.
+.devserver.local
 
 ## editors
 /.idea
