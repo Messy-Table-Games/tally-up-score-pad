@@ -4,6 +4,7 @@
   "description": "A score keeping app for the dice game Tally Up!",
   "license": "MIT",
   "main": "src/index.js",
+  "devserver": { "port": 5197 },
   "scripts": {
     "dev": "webpack serve --open --config webpack/webpack.dev.js",
     "dev:poll": "webpack serve --open --watch-options-poll --config webpack/webpack.dev.js",
