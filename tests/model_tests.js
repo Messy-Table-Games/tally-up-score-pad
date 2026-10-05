@@ -325,17 +325,17 @@ registerTest('testCan', function() {
   appState.undo();
   appState.tallyUp(appState.game.players[0]);
   TestCondition(!appState.game.noChanges, 'testCan - !noChanges after Tally Up');
-  TestCondition(!appState.canNext, 'testCan - !canNext after Tally Up');
+  TestCondition(appState.canNext, 'testCan - canNext after Tally Up');
   TestCondition(appState.canBust, 'testCan - canBust after Tally Up');
   TestCondition(appState.canRoll, 'testCan - canRoll after Tally Up');
   appState.addGameRoll(50);
   TestCondition(!appState.game.noChanges, 'testCan - !noChanges after add roll');
-  TestCondition(!appState.canNext, 'testCan - !canNext after addGameRoll');
+  TestCondition(appState.canNext, 'testCan - canNext after addGameRoll');
   TestCondition(appState.canBust, 'testCan - canBust after addGameRoll');
   TestCondition(appState.canRoll, 'testCan - canRoll after addGameRoll');
   appState.setPlayerStatus(appState.game.players[0], 'out');
   TestCondition(!appState.game.noChanges, 'testCan - !noChanges after setPlayer 0 Status');
-  TestCondition(!appState.canNext, 'testCan - !canNext after setPlayer 0 Status');
+  TestCondition(appState.canNext, 'testCan - canNext after setPlayer 0 Status');
   TestCondition(appState.canBust, 'testCan - canBust after setPlayer 0 Status');
   TestCondition(appState.canRoll, 'testCan - canRoll after setPlayer 0 Status');
   appState.setPlayerStatus(appState.game.players[1], 'out');
@@ -343,6 +343,27 @@ registerTest('testCan', function() {
   TestCondition(appState.canNext, 'testCan - canNext after setPlayer 1 Status');
   TestCondition(!appState.canBust, 'testCan - !canBust after setPlayer 1 Status');
   TestCondition(!appState.canRoll, 'testCan - !canRoll after setPlayer 1 Status');
+});
+
+registerTest('testNextWithPlayersIn', function() {
+  const appState = new AppState({ storageKey: 'testNextWithPlayersIn' });
+  appState.addPlayer();
+  appState.addPlayer();
+  TestCondition(!appState.canNext, 'testNextWithPlayersIn - !canNext with players in and no rolls');
+
+  appState.addGameRoll(50);
+  TestCondition(appState.game.players.every(p => p.status === 'in'), 'testNextWithPlayersIn - players still in');
+  TestCondition(appState.canNext, 'testNextWithPlayersIn - canNext with pending roll and players in');
+
+  appState.endGameRound();
+  TestCondition(appState.game.players.every(p => p.bankedScore === 50 && p.pendingScore === 0), 'testNextWithPlayersIn - scores banked for players in');
+  TestCondition(appState.game.players.every(p => p.status === 'in'), 'testNextWithPlayersIn - players in after next');
+  TestCondition(appState.game.rolls.length === 0, 'testNextWithPlayersIn - rolls cleared');
+  TestCondition(!appState.canNext, 'testNextWithPlayersIn - !canNext after next');
+
+  appState.undo();
+  TestCondition(appState.canNext, 'testNextWithPlayersIn - canNext after undo');
+  TestCondition(appState.game.players.every(p => p.bankedScore === 0 && p.pendingScore === 50), 'testNextWithPlayersIn - scores restored after undo');
 });
 
 registerTest('testSchema', function() {
@@ -678,7 +699,7 @@ registerTest('testAppStateFullGameFlow', function() {
   // Add some rolls
   appState.addGameRoll(50);
   pushStateAndVerifyLoadFromStorage(appState);
-  TestCondition(!appState.canNext, 'testAppStateFullGameFlow - !canNext after addGameRoll(50)');
+  TestCondition(appState.canNext, 'testAppStateFullGameFlow - canNext after addGameRoll(50)');
   TestCondition(appState.canBust, 'testAppStateFullGameFlow - canBust after addGameRoll(50)');
   TestCondition(appState.canRoll, 'testAppStateFullGameFlow - canRoll after addGameRoll(50)');
   appState.addGameRoll(30);
@@ -800,8 +821,8 @@ registerTest('testAppStateFullGameFlow', function() {
     // We explicitly allow a bust after a tally up roll since it can happen in a game, even
     // though the bust has no effect in this specific case since it is the only roll.
   TestCondition(appState.canBust, 'testAppStateFullGameFlow - canBust after tallyUp()');
-    // The player is still IN so canNext should be false.
-  TestCondition(!appState.canNext, 'testAppStateFullGameFlow - !canNext after tallyUp()');
+    // There are pending rolls so canNext should be true even though players are still IN.
+  TestCondition(appState.canNext, 'testAppStateFullGameFlow - canNext after tallyUp()');
   pushStateAndVerifyLoadFromStorage(appState);
   
   // Verify final state
@@ -811,7 +832,7 @@ registerTest('testAppStateFullGameFlow', function() {
   TestCondition(appState.game.players[0].status === 'out' && appState.game.players[1].status === 'in' && appState.game.players[2].status === 'in', 'testAppStateFullGameFlow - Player statuses');
   TestCondition(appState.game.rolls.length === 4 && appState.game.rolls[3] === 'TUP!', 'testAppStateFullGameFlow - Rolls');
 
-  // End the round -- Note that in the UI this is prevented until all players are marked out.
+  // End the round -- Players still IN are banked too, since pending rolls enable Next.
   appState.endGameRound();
   pushStateAndVerifyLoadFromStorage(appState);
 

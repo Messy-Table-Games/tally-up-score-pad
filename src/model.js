@@ -176,10 +176,6 @@ export class Game {
     return ComputePendingRollScore(this.rolls);
   }
 
-  get hasPendingRollScore() {
-    return this.rolls.length > 0;
-  }
-
   get noChanges() {
     if (this.rolls.length > 0 ) {
       return false;
@@ -213,6 +209,9 @@ export class Game {
   get canNext() {
     if (this.players.length === 0) {
       return true; // Let's someone just use the scorepad without players
+    }
+    if (this.rolls.length > 0) {
+      return true; // Remaining players may all go out at once without being marked OUT
     }
     return this.players.every(player => player.status === 'out');
   }
