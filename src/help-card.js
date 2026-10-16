@@ -1,9 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { t } from './i18n.js';
-import { starSvgStr } from './shared-styles.js';
+import { starSvgStr, undoSvgStr } from './shared-styles.js';
 
 const tupButtonHtml = `<span style="display:inline-flex;align-items:center;gap:2px;border:1px solid #f29678;border-radius:16px;padding:0 2px;margin-bottom:2px;height:1em;color:#f05422;background:#fff;vertical-align:middle"><span style="display:inline-flex;align-items:center;gap:3px;transform:scale(.8);transform-origin:50% 50%;">${starSvgStr}${starSvgStr}${starSvgStr}</span></span>`;
+const undoButtonHtml = `<span style="display:inline-flex;align-items:center;border:1px solid #c8c8c8;border-radius:6px;padding:1px 6px;margin-bottom:2px;color:#000;background:#fff;vertical-align:middle">${undoSvgStr}</span>`;
 
 export class HelpCard extends LitElement {
   static styles = [
@@ -91,7 +92,7 @@ export class HelpCard extends LitElement {
 
   render() {
     return html`
-      ${unsafeHTML(t('help.content', { tupButton: tupButtonHtml }))}
+      ${unsafeHTML(t('help.content', { tupButton: tupButtonHtml, undoButton: undoButtonHtml }))}
     `;
   }
 }

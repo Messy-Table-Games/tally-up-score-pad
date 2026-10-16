@@ -39,17 +39,28 @@ class I18nStore {
 
 export const i18nStore = new I18nStore();
 
+/**
+ * Picks the locale to use: a supported ?lang= URL value, then the saved
+ * choice, then the first supported browser language, then the default.
+ * @param {{urlLang?: string|null, saved?: string|null, navLangs?: string[]}} sources
+ * @returns {string}
+ */
+export function resolveLocale({ urlLang = null, saved = null, navLangs = [] } = {}) {
+  if (SUPPORTED_LOCALES.includes(urlLang)) return urlLang;
+  if (SUPPORTED_LOCALES.includes(saved)) return saved;
+  const detected = Array.from(navLangs)
+    .map(l => l.split('-')[0])
+    .find(l => SUPPORTED_LOCALES.includes(l));
+  return detected ?? DEFAULT_LOCALE;
+}
+
 // Auto-initialize when this module is first imported.
 // All locale data is bundled — no async loading needed.
 // Guards against non-browser environments (e.g. Node.js test runners).
 (function _initLocale() {
-  const isBrowser = typeof localStorage !== 'undefined';
+  const isBrowser = typeof window !== 'undefined';
   const saved = isBrowser ? localStorage.getItem(STORAGE_KEY) : null;
   const navLangs = typeof navigator !== 'undefined' ? (navigator.languages ?? [navigator.language ?? '']) : [];
-  const detected = Array.from(navLangs)
-    .map(l => l.split('-')[0])
-    .find(l => SUPPORTED_LOCALES.includes(l));
-
   const urlLang = isBrowser ? new URLSearchParams(location.search).get('lang') : null;
 
   if (isBrowser && urlLang !== null) {
@@ -58,12 +69,9 @@ export const i18nStore = new I18nStore();
     history.replaceState(null, '', url);
   }
 
-  let lang;
-  if (SUPPORTED_LOCALES.includes(urlLang)) {
-    lang = urlLang;
+  const lang = resolveLocale({ urlLang, saved, navLangs });
+  if (lang === urlLang) {
     localStorage.setItem(STORAGE_KEY, lang);
-  } else {
-    lang = SUPPORTED_LOCALES.includes(saved) ? saved : (detected ?? DEFAULT_LOCALE);
   }
 
   i18nStore._setStrings(lang, LOCALE_REGISTRY[lang].strings);

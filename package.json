@@ -4,11 +4,14 @@
   "description": "A score keeping app for the dice game Tally Up!",
   "license": "MIT",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "dev": "webpack serve --open --config webpack/webpack.dev.js",
     "dev:poll": "webpack serve --open --watch-options-poll --config webpack/webpack.dev.js",
     "build": "webpack --config webpack/webpack.prod.js",
     "build:staging": "webpack --config webpack/webpack.staging.js",
+    "deploy:staging": "node scripts/deploy.js staging",
+    "deploy:production": "node scripts/deploy.js production",
     "storybook": "storybook dev -p 6006",
     "tests": "node tests/test_main.js"
   },

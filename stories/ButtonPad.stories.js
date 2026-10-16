@@ -6,3 +6,5 @@ export default {
 };
 
 export const Default = () => '<button-pad></button-pad>';
+
+export const AllEnabled = () => '<button-pad canundo canredo canbust cannext canroll></button-pad>';

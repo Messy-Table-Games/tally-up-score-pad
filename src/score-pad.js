@@ -5,6 +5,7 @@ import './score-board.js';
 import './button-pad.js';
 import './pending-score.js';
 import './header-view.js';
+import './undo-toast.js';
 
 export class ScorePad extends LitElement {
   static properties = {
@@ -78,6 +79,15 @@ export class ScorePad extends LitElement {
       z-index: 3;
     }
 
+    /* Floats over the bottom of the score list, just above the pending score strip */
+    undo-toast {
+      grid-area: pending;
+      align-self: end;
+      justify-self: center;
+      transform: translateY(calc(-100% - 8px));
+      z-index: 4;
+    }
+
     .filler {
       grid-area: filler;
       background: linear-gradient(0, #fcb948 0%, #ffe465 100%);
@@ -113,8 +123,13 @@ export class ScorePad extends LitElement {
     super.disconnectedCallback();
   }
 
+  showUndoToast(message) {
+    this.renderRoot?.querySelector('undo-toast')?.show(message);
+  }
+
   render() {
     return html`
+      <undo-toast></undo-toast>
       <header-view .canUndo=${this.appState.canUndo}></header-view>
       <score-board .game=${this.appState.game}></score-board>
       <div class="filler"></div>

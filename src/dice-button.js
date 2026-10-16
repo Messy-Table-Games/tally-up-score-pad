@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { t } from './i18n.js';
+import { undoSvg, redoSvg } from './shared-styles.js';
 
 export class DiceButton extends LitElement {
   static properties = {
@@ -42,6 +43,12 @@ export class DiceButton extends LitElement {
       white-space: nowrap;
     }
 
+    svg {
+      display: block;
+      width: 22px;
+      height: 22px;
+    }
+
     button:active {
       background: rgba(255, 255, 255, 0.7);
     }
@@ -66,12 +73,16 @@ export class DiceButton extends LitElement {
   }
 
   getTitle() {
+    if (this.value === 'Undo') return t('button.undo');
+    if (this.value === 'Redo') return t('button.redo');
     return t('diceButton.value', { value: this.value });
   }
 
   getDisplayLabel() {
     if (this.value === 'Bust') return t('diceButton.bust');
     if (this.value === 'Next') return t('diceButton.next');
+    if (this.value === 'Undo') return undoSvg;
+    if (this.value === 'Redo') return redoSvg;
     return this.value;
   }
 

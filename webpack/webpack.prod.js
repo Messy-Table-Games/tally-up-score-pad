@@ -1,11 +1,11 @@
-const { merge } = require('webpack-merge');
-const common = require('./webpack.common.js');
-const TerserPlugin = require('terser-webpack-plugin');
-const webpack = require('webpack');
-const { InjectManifest } = require('workbox-webpack-plugin');
-const { APP_BUILD_NUMBER } = require('../src/build-number.js');
+import { merge } from 'webpack-merge';
+import TerserPlugin from 'terser-webpack-plugin';
+import webpack from 'webpack';
+import { InjectManifest } from 'workbox-webpack-plugin';
+import common from './webpack.common.js';
+import { APP_BUILD_NUMBER } from '../src/build-number.js';
 
-module.exports = merge(common, {
+export default merge(common, {
   mode: 'production',
   optimization: {
     minimize: true,

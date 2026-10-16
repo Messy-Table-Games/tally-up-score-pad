@@ -3,6 +3,8 @@ import './dice-button.js';
 
 export class ButtonPad extends LitElement {
   static properties = {
+    canUndo: { type: Boolean },
+    canRedo: { type: Boolean },
     canBust: { type: Boolean },
     canNext: { type: Boolean },
     canRoll: { type: Boolean },
@@ -29,7 +31,7 @@ export class ButtonPad extends LitElement {
 
     .top-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(50px, 1fr));
+      grid-template-columns: repeat(4, minmax(50px, 1fr));
       gap: 8px;
     }
 
@@ -37,12 +39,6 @@ export class ButtonPad extends LitElement {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-    }
-
-    @container button-pad (max-width: 300px) {
-      .top-grid {
-        grid-template-columns: repeat(4, minmax(50px, 1fr));
-      }
     }
 
     @container button-pad (max-width: 240px) {
@@ -54,6 +50,8 @@ export class ButtonPad extends LitElement {
 
   constructor() {
     super();
+    this.canUndo = false;
+    this.canRedo = false;
     this.canBust = false;
     this.canNext = false;
     this.canRoll = false;
@@ -73,6 +71,8 @@ export class ButtonPad extends LitElement {
         <dice-button value='100' ?disabled=${!this.canRoll}></dice-button>
         <dice-button value='-100' ?disabled=${!this.canRoll}></dice-button>
         <dice-button value='x2' ?disabled=${!this.canRoll}></dice-button>
+        <dice-button value='Undo' ?disabled=${!this.canUndo}></dice-button>
+        <dice-button value='Redo' ?disabled=${!this.canRedo}></dice-button>
       </div>
       <div class="bottom-row">
         <dice-button value='Bust' ?disabled=${!this.canBust}></dice-button>

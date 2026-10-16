@@ -26,6 +26,28 @@ function injectLocalStorage(storageMap) {
 
 injectLocalStorage(gLocalStorage);
 
+// Saved-game fixtures pin the localStorage format of earlier releases, so they are
+// never rewritten. A missing fixture fails the test; running the tests with
+// TUPSP_GENERATE_FIXTURES=1 creates fixtures that do not exist yet by running
+// generate() against a copy of baseMap. Returns the loaded storage, injected.
+function loadFixture(file, generate, baseMap = new Map()) {
+  if (!fs.existsSync(file) && process.env.TUPSP_GENERATE_FIXTURES === '1') {
+    const storageMap = new Map(baseMap);
+    injectLocalStorage(storageMap);
+    generate();
+    fs.writeFileSync(file, JSON.stringify(Object.fromEntries(storageMap), null, 2), 'utf8');
+  }
+
+  if (!fs.existsSync(file)) {
+    TestCondition(false, `fixture ${file} exists (run with TUPSP_GENERATE_FIXTURES=1 to create it)`);
+    return null;
+  }
+
+  const storageMap = new Map(Object.entries(JSON.parse(fs.readFileSync(file, 'utf8'))));
+  injectLocalStorage(storageMap);
+  return storageMap;
+}
+
 // Test for AddPlayerCommand
 registerTest('testAddPlayerCommand', function() {
   const game = new Game();
@@ -371,29 +393,7 @@ registerTest('testSchema', function() {
   const bustedFile = 'tests/v1_busted.json';
   const endedFile = 'tests/v1_ended.json';
 
-  function loadTestJson(file) {
-    if (fs.existsSync(file)) {
-      const loadedStorage = new Map();
-      const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-      Object.entries(data).forEach(([key, value]) => {
-        loadedStorage.set(key, value);
-      });
-      return loadedStorage;
-    }
-
-    return null;
-  }
-
-  function saveTestJson(dataMap, file) {
-    const dataObj = Object.fromEntries(dataMap);
-    fs.writeFileSync(file, JSON.stringify(dataObj, null, 2), 'utf8');
-  }
-  
-  let rollsMap = loadTestJson(rollsFile);
-  if (!rollsMap) {
-    rollsMap = new Map();
-    injectLocalStorage(rollsMap);
-
+  const rollsMap = loadFixture(rollsFile, () => {
     const appState = new AppState();
     appState.addPlayer();
     appState.addPlayer();
@@ -412,17 +412,14 @@ registerTest('testSchema', function() {
     appState.addGameRoll('-100');
     appState.tallyUp(appState.game.players[1]);
     appState.addPlayerScore(appState.game.players[0], 100);
-
-    saveTestJson(rollsMap, rollsFile);
-    rollsMap = loadTestJson(rollsFile);
-
-    injectLocalStorage(rollsMap);
-  } else {
-    injectLocalStorage(rollsMap);
+  });
+  if (!rollsMap) {
+    injectLocalStorage(gLocalStorage);
+    return;
   }
 
-  TestCondition(rollsMap !== null, 'testSchema - loaded rollsMap is not null');
   let appState = new AppState();
+  TestCondition(!appState.canRedo, 'testSchema - v1 save without redoLength has nothing to redo');
 
   TestCondition(appState._storageKey === 'TallyUpModel', 'testSchema - test schema has expected storage key');
   TestCondition(appState.game, 'testSchema - test schema has game');
@@ -554,23 +551,14 @@ registerTest('testSchema', function() {
   TestCondition(cmd.score === 100, 'testSchema - AddScoreCommand score is 100');
   
   // Now test bust and persistance
-  let bustedMap = loadTestJson(bustedFile);
+  const bustedMap = loadFixture(bustedFile, () => {
+    new AppState().bustGameRound();
+  }, rollsMap);
   if (!bustedMap) {
-    bustedMap = new Map(rollsMap);
-    injectLocalStorage(bustedMap);
-
-    const appState = new AppState();
-    appState.bustGameRound();
-
-    saveTestJson(bustedMap, bustedFile);
-    bustedMap = loadTestJson(bustedFile);
-
-    injectLocalStorage(bustedMap);
-  } else {
-    injectLocalStorage(bustedMap);
+    injectLocalStorage(gLocalStorage);
+    return;
   }
 
-  TestCondition(bustedMap !== null, 'testSchema - loaded bustedMap is not null');
   appState = new AppState();
 
   TestCondition(appState.game.players[0].bankedScore === 200, 'testSchema - player 0 has banked score of 200 after bust');
@@ -581,24 +569,16 @@ registerTest('testSchema', function() {
   TestCondition(appState.game.players[1].pendingTotalScore === 260, 'testSchema - player 1 has pending total score of 260 after bust');
 
   // Now test bust and persistance
-  let endedMap = loadTestJson(endedFile);
-  if (!endedMap) {
-    endedMap = new Map(rollsMap);;
-    injectLocalStorage(endedMap);
-
+  const endedMap = loadFixture(endedFile, () => {
     const appState = new AppState();
     appState.setPlayerStatus(appState.game.players[0], 'out');
     appState.endGameRound();
-
-    saveTestJson(endedMap, endedFile);
-    endedMap = loadTestJson(endedFile);
-
-    injectLocalStorage(endedMap);
-  } else {
-    injectLocalStorage(endedMap);
+  }, rollsMap);
+  if (!endedMap) {
+    injectLocalStorage(gLocalStorage);
+    return;
   }
 
-  TestCondition(endedMap !== null, 'testSchema - loaded endedMap is not null');
   appState = new AppState();
 
   TestCondition(appState.game.players[0].bankedScore === 860, 'testSchema - player 0 has banked score of 860 after next');
@@ -850,18 +830,106 @@ registerTest('testAppStateFullGameFlow', function() {
     if (JSON.stringify(appState.serialize()) !== JSON.stringify(states[stateIndex])) return;
   }
 
-  // redo not yet fully implemented
-  // // Redo everything
-  // while (appState.canRedo) {
-  //   appState.redo();
-  // }
+  // Redo everything, reloading from storage before each redo
+  TestCondition(appState.canRedo, 'testAppStateFullGameFlow - canRedo after undoing everything');
+  let reloaded = appState;
+  while (reloaded.canRedo) {
+    reloaded = new AppState({ storageKey: 'TUPTests' });
+    reloaded.redo();
+    stateIndex++;
+    TestCondition(JSON.stringify(reloaded.serialize()) === JSON.stringify(states[stateIndex]), 'testAppStateFullGameFlow - state after redo');
+    if (JSON.stringify(reloaded.serialize()) !== JSON.stringify(states[stateIndex])) return;
+  }
+  TestCondition(stateIndex === states.length - 1, 'testAppStateFullGameFlow - redo restores final state');
+  TestCondition(reloaded.canUndo, 'testAppStateFullGameFlow - canUndo after redoing everything');
+});
 
-  // // Check back to final state
-  // const afterRedoState = appState.serialize();
-  // if (JSON.stringify(afterRedoState) !== JSON.stringify(finalState)) {
-  //   console.log('testAppStateFullGameFlow: \x1b[31mFAIL\x1b[0m - After redo, state not final');
-  //   return;
-  // }
+registerTest('testRedo', function() {
+  const appState = new AppState({ storageKey: 'testRedo' });
+  TestCondition(!appState.canRedo, 'testRedo - !canRedo initially');
+
+  appState.addPlayer('Alice');
+  appState.addGameRoll('50');
+  TestCondition(!appState.canRedo, 'testRedo - !canRedo after execute');
+
+  appState.undo();
+  TestCondition(appState.canRedo, 'testRedo - canRedo after undo');
+  TestCondition(appState.game.rolls.length === 0, 'testRedo - roll undone');
+
+  appState.redo();
+  TestCondition(!appState.canRedo, 'testRedo - !canRedo after redoing everything');
+  TestCondition(appState.game.rolls.length === 1 && appState.game.players[0].pendingScore === 50, 'testRedo - roll redone');
+
+  // Redo is a no-op when there is nothing to redo
+  appState.redo();
+  TestCondition(appState.game.rolls.length === 1, 'testRedo - redo with nothing to redo is a no-op');
+
+  // A new action discards the redo history
+  appState.undo();
+  appState.addGameRoll('20');
+  TestCondition(!appState.canRedo, 'testRedo - !canRedo after new action');
+  TestCondition(appState.game.rolls.length === 1 && appState.game.rolls[0] === '20', 'testRedo - new action replaced undone roll');
+
+  appState.clear();
+  TestCondition(!appState.canRedo && !appState.canUndo, 'testRedo - clear resets undo and redo');
+});
+
+registerTest('testRedoAddPlayerAfterReload', function() {
+  const storageKey = 'testRedoAddPlayerAfterReload';
+  let appState = new AppState({ storageKey });
+  appState.addPlayer('Alice');
+  appState.changePlayerName(appState.game.players[0], 'Alicia');
+  const playerId = appState.game.players[0].id;
+
+  appState.undo();
+  appState.undo();
+  TestCondition(appState.game.players.length === 0, 'testRedoAddPlayerAfterReload - player removed by undo');
+
+  appState = new AppState({ storageKey });
+  TestCondition(appState.canRedo && !appState.canUndo, 'testRedoAddPlayerAfterReload - redo state survives reload');
+
+  appState.redo();
+  TestCondition(appState.game.players.length === 1, 'testRedoAddPlayerAfterReload - player re-added');
+  TestCondition(appState.game.players[0].id === playerId, 'testRedoAddPlayerAfterReload - same player id');
+  TestCondition(appState.game.players[0].name === 'Alice', 'testRedoAddPlayerAfterReload - original name');
+
+  appState = new AppState({ storageKey });
+  appState.redo();
+  TestCondition(appState.game.players[0].name === 'Alicia', 'testRedoAddPlayerAfterReload - rename redone after reload');
+  TestCondition(!appState.canRedo, 'testRedoAddPlayerAfterReload - nothing left to redo');
+});
+
+registerTest('testRedoWrapsCommandStack', function() {
+  const appState = new AppState({ storageKey: 'testRedoWrapsCommandStack' });
+  const maxSize = 20;
+
+  // Wrap the circular stack so the start index is no longer 0
+  for (let i = 0; i < maxSize + 5; i++) {
+    appState.addGameRoll('10');
+  }
+  TestCondition(appState._commandStack._startIndex === 5, 'testRedoWrapsCommandStack - stack wrapped');
+
+  for (let i = 0; i < 10; i++) {
+    appState.undo();
+  }
+  TestCondition(appState.game.rolls.length === 15, 'testRedoWrapsCommandStack - 10 rolls undone');
+
+  while (appState.canRedo) {
+    appState.redo();
+  }
+  TestCondition(appState.game.rolls.length === 25, 'testRedoWrapsCommandStack - all rolls redone');
+  TestCondition(appState._commandStack._length === maxSize, 'testRedoWrapsCommandStack - stack full after redo');
+
+  // Undo/redo across the wrap point, then discard redo with a new action
+  for (let i = 0; i < maxSize; i++) {
+    appState.undo();
+  }
+  TestCondition(!appState.canUndo && appState.game.rolls.length === 5, 'testRedoWrapsCommandStack - undo everything');
+  appState.redo();
+  appState.addGameRoll('20');
+  TestCondition(!appState.canRedo, 'testRedoWrapsCommandStack - new action clears redo');
+  TestCondition(appState._commandStack._length === 2, 'testRedoWrapsCommandStack - length after new action');
+  TestCondition(appState.game.rolls.length === 7 && appState.game.rolls[6] === '20', 'testRedoWrapsCommandStack - rolls after new action');
 });
 
 registerTest('testIsValidBuildNumber', function() {
@@ -880,3 +948,142 @@ registerTest('testIsValidBuildNumber', function() {
 });
 
 
+
+registerTest('testUndoRedoDescriptions', function() {
+  const appState = new AppState({ storageKey: 'testUndoRedoDescriptions' });
+  appState.addPlayer('Alice');
+  appState.addGameRoll('70');
+  appState.addPlayerScore(appState.game.players[0], 150);
+
+  TestCondition(appState.undo() === 'Undid setting the score for Alice to 220', 'testUndoRedoDescriptions - undo score describes resulting score');
+  TestCondition(appState.redo() === 'Redid setting the score for Alice to 220', 'testUndoRedoDescriptions - redo score describes resulting score');
+  appState.undo();
+  TestCondition(appState.undo() === 'Undid roll of 70', 'testUndoRedoDescriptions - undo roll');
+  TestCondition(appState.redo() === 'Redid roll of 70', 'testUndoRedoDescriptions - redo roll');
+  appState.redo();
+  TestCondition(appState.redo() === null, 'testUndoRedoDescriptions - nothing to redo returns null');
+  appState.undo(); appState.undo();
+  TestCondition(appState.undo() === 'Undid adding Alice', 'testUndoRedoDescriptions - undo add player');
+  TestCondition(appState.undo() === null, 'testUndoRedoDescriptions - nothing to undo returns null');
+});
+
+registerTest('testRenameIgnoresEmptyAndUnchangedNames', function() {
+  const appState = new AppState({ storageKey: 'testRenameIgnoresEmptyAndUnchangedNames' });
+  appState.addPlayer('Alice');
+  const player = appState.game.players[0];
+
+  for (const name of ['', '   ', null, undefined, 'Alice', '  Alice  ']) {
+    appState.changePlayerName(player, name);
+    TestCondition(player.name === 'Alice', `testRenameIgnoresEmptyAndUnchangedNames - name unchanged for ${JSON.stringify(name)}`);
+    TestCondition(appState._commandStack._length === 1, `testRenameIgnoresEmptyAndUnchangedNames - no command for ${JSON.stringify(name)}`);
+  }
+
+  appState.changePlayerName(player, '  Alicia  ');
+  TestCondition(player.name === 'Alicia', 'testRenameIgnoresEmptyAndUnchangedNames - name is trimmed');
+});
+
+registerTest('testRemoveUnknownPlayer', function() {
+  const appState = new AppState({ storageKey: 'testRemoveUnknownPlayer' });
+  appState.addPlayer('Alice');
+  appState.addGameRoll('50');
+
+  appState.removePlayer('no-such-player');
+  TestCondition(appState.game.players.length === 1, 'testRemoveUnknownPlayer - players unchanged');
+  TestCondition(appState._commandStack._length === 2, 'testRemoveUnknownPlayer - no command recorded');
+
+  appState.undo();
+  TestCondition(appState.game.rolls.length === 0, 'testRemoveUnknownPlayer - undo reverts the previous real action');
+  TestCondition(appState.canUndo, 'testRemoveUnknownPlayer - undo history intact');
+});
+
+registerTest('testTallyUpByOutPlayer', function() {
+  const appState = new AppState({ storageKey: 'testTallyUpByOutPlayer' });
+  appState.addPlayer('Alice');
+  appState.addPlayer('Bob');
+  appState.addPlayer('Carol');
+  appState.addGameRoll('50');
+  const [alice, bob, carol] = appState.game.players;
+  appState.setPlayerStatus(alice, 'out');
+  appState.setPlayerStatus(carol, 'out');
+
+  // Rules: the first to shout scores 200 even if OUT; others still IN get 100
+  appState.tallyUp(alice);
+  TestCondition(alice.score === 200, 'testTallyUpByOutPlayer - OUT caller gets 200');
+  TestCondition(bob.score === 100, 'testTallyUpByOutPlayer - IN player gets 100');
+  TestCondition(carol.score === 0, 'testTallyUpByOutPlayer - other OUT player gets nothing');
+
+  appState.undo();
+  TestCondition(alice.score === 0 && bob.score === 0 && carol.score === 0, 'testTallyUpByOutPlayer - undo restores scores');
+  appState.redo();
+  TestCondition(alice.score === 200 && bob.score === 100 && carol.score === 0, 'testTallyUpByOutPlayer - redo reapplies scores');
+});
+
+registerTest('testAddPlayerMidRound', function() {
+  const appState = new AppState({ storageKey: 'testAddPlayerMidRound' });
+  appState.addPlayer('Alice');
+  TestCondition(appState.game.players[0].pendingScore === 0, 'testAddPlayerMidRound - no rolls means no pending score');
+
+  appState.addGameRoll('50');
+  appState.addGameRoll('x2');
+  appState.addPlayer('Bob');
+  const bob = appState.game.players[1];
+  TestCondition(bob.pendingScore === 100, 'testAddPlayerMidRound - new player gets the pending roll score');
+
+  appState.undo();
+  appState.redo();
+  TestCondition(appState.game.players[1].pendingScore === 100, 'testAddPlayerMidRound - pending score kept through undo/redo');
+
+  const reloaded = new AppState({ storageKey: 'testAddPlayerMidRound' });
+  reloaded.undo();
+  reloaded.redo();
+  TestCondition(reloaded.game.players[1].pendingScore === 100, 'testAddPlayerMidRound - pending score kept through undo/redo after reload');
+});
+
+// A game saved mid-undo, with two actions to redo: Next and adding Carol
+registerTest('testRedoFixture', function() {
+  const redoMap = loadFixture('tests/v2_redo.json', () => {
+    const appState = new AppState();
+    appState.addPlayer('Alice');
+    appState.addPlayer('Bob');
+    appState.addGameRoll('50');
+    appState.setPlayerStatus(appState.game.players[1], 'out');
+    appState.addGameRoll('30');
+    appState.endGameRound();
+    appState.addPlayer('Carol');
+    appState.undo();
+    appState.undo();
+  });
+  if (!redoMap) {
+    injectLocalStorage(gLocalStorage);
+    return;
+  }
+
+  const header = JSON.parse(redoMap.get('TallyUpModel_cmd_stack'));
+  TestCondition(header.length === 5 && header.redoLength === 2, 'testRedoFixture - stack header stores redoLength');
+  const carolId = JSON.parse(redoMap.get('TallyUpModel_cmd_6')).data.player?.id;
+  TestCondition(Boolean(carolId), 'testRedoFixture - undone AddPlayer stores the full player');
+
+  let appState = new AppState();
+  const [alice, bob] = appState.game.players;
+  TestCondition(appState.canUndo && appState.canRedo, 'testRedoFixture - loads with undo and redo');
+  TestCondition(appState.game.players.length === 2, 'testRedoFixture - two players before redo');
+  TestCondition(JSON.stringify(appState.game.rolls) === '["50","30"]', 'testRedoFixture - round rolls restored');
+  TestCondition(alice.pendingScore === 80 && bob.status === 'out' && bob.pendingScore === 50, 'testRedoFixture - pending scores restored');
+
+  TestCondition(appState.redo() === 'Redid Next', 'testRedoFixture - first redo is Next');
+  TestCondition(appState.game.rolls.length === 0, 'testRedoFixture - Next clears rolls');
+  TestCondition(alice.score === 80 && bob.score === 50 && bob.status === 'in', 'testRedoFixture - Next banks scores and resets status');
+
+  appState = new AppState();
+  TestCondition(appState.redo() === 'Redid adding Carol', 'testRedoFixture - second redo after reload is adding Carol');
+  const carol = appState.game.players[2];
+  TestCondition(carol?.id === carolId && carol.pendingScore === 0, 'testRedoFixture - Carol restored with her original id');
+  TestCondition(!appState.canRedo, 'testRedoFixture - nothing left to redo');
+
+  while (appState.canUndo) {
+    appState.undo();
+  }
+  TestCondition(appState.game.players.length === 0 && appState.game.rolls.length === 0, 'testRedoFixture - undoing everything returns to an empty game');
+
+  injectLocalStorage(gLocalStorage);
+});

@@ -181,7 +181,7 @@ class ModalDialog extends LitElement {
 
   _onClose() {
     // Ensure property reflects native user actions (ESC, etc.)
-    if (this.open) this.open = false;
+    if (this.open) this.close();
   }
 
   _stopPropagation(e) {

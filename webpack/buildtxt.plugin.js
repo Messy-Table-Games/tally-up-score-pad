@@ -1,6 +1,8 @@
 // Custom plugin to generate build.txt
-const { APP_BUILD_NUMBER } = require('../src/build-number.js');
-const { Compilation } = require('webpack');
+import webpack from 'webpack';
+import { APP_BUILD_NUMBER } from '../src/build-number.js';
+
+const { Compilation } = webpack;
 
 class GenerateBuildTxtFilePlugin {
   apply(compiler) {
@@ -22,4 +24,4 @@ class GenerateBuildTxtFilePlugin {
   }
 }
 
-module.exports = GenerateBuildTxtFilePlugin;
+export default GenerateBuildTxtFilePlugin;

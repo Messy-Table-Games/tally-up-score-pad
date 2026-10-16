@@ -1,5 +1,7 @@
 {
   "hosting": {
+    "predeploy": ["node scripts/predeploy.js"],
+    "postdeploy": ["node scripts/postdeploy.js"],
     "public": "dist",
     "ignore": [
       "firebase.json",

@@ -1,15 +1,16 @@
-const path = require('path');
-const fs = require('fs');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+import path from 'path';
+import fs from 'fs';
+import dotenv from 'dotenv';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import GenerateBuildTxtFilePlugin from './buildtxt.plugin.js';
 
-const envFile = path.resolve(__dirname, '../.env');
+const envFile = path.resolve(import.meta.dirname, '../.env');
 if (fs.existsSync(envFile)) {
-  require('dotenv').config({ path: envFile });
+  dotenv.config({ path: envFile });
 }
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const GenerateBuildTxtFilePlugin = require('./buildtxt.plugin.js');
 
-module.exports = {
+export default {
   entry: './src/index.js',
   plugins: [
     // Use the Html plugin so it injects the hashed script name
@@ -32,7 +33,7 @@ module.exports = {
   ],
   output: {
     filename: 'bundle.[contenthash].js', 
-    path: path.resolve(__dirname, '../dist'),
+    path: path.resolve(import.meta.dirname, '../dist'),
     clean: true,
   },
   module: {

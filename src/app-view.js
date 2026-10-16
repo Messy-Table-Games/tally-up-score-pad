@@ -4,7 +4,27 @@ import './score-pad.js';
 import './player-modals.js';
 import './confirm-dialog.js';
 import { LogEvent } from './log-event.js';
-import { t } from './i18n.js';
+import { i18nStore, t } from './i18n.js';
+
+const KEY_TO_DICE_VALUE = {
+  '1': '10',
+  '2': '20',
+  '3': '30',
+  '4': '40',
+  '5': '50',
+  '6': '60',
+  '7': '70',
+  '0': '100',
+  '+': '100',
+  '-': '-100',
+  '*': 'x2',
+  b: 'Bust',
+  n: 'Next',
+  u: 'Undo',
+  arrowleft: 'Undo',
+  r: 'Redo',
+  arrowright: 'Redo',
+};
 
 class AppView extends LitElement {
   static properties = {
@@ -52,12 +72,14 @@ class AppView extends LitElement {
     this._addPlayerDialogOpen = false;
     this._editNameDialogOpen = false;
     this._editScoreDialogOpen = false;
+    this._handleKeyDown = this._handleKeyDown.bind(this);
   }
 
   connectedCallback() {
     super.connectedCallback();
 
     this.addEventListener('dice-button-click', this._onDiceButtonClick);
+    window.addEventListener('keydown', this._handleKeyDown);
     this.addEventListener('undo-click', this._onUndo);
     this.addEventListener('reset-click', this._onReset);
     this.addEventListener('add-player-click', this._onAddPlayer);
@@ -65,12 +87,11 @@ class AppView extends LitElement {
     this.addEventListener('player-score-click', this._onPlayerScoreClick);
     this.addEventListener('inout-click', this._onInOutClick);
     this.addEventListener('tup-click', this._onTUPClick);
-
-    LogEvent('app_view_connected');
   }
 
   disconnectedCallback() {
     this.removeEventListener('dice-button-click', this._onDiceButtonClick);
+    window.removeEventListener('keydown', this._handleKeyDown);
     this.removeEventListener('undo-click', this._onUndo);
     this.removeEventListener('reset-click', this._onReset);
     this.removeEventListener('add-player-click', this._onAddPlayer);
@@ -97,44 +118,59 @@ class AppView extends LitElement {
   }
 
   _onDiceButtonClick(e) {
-    if (e.detail.value === 'Next') {
+    this._applyDiceValue(e.detail.value);
+  }
+
+  _applyDiceValue(value) {
+    if (value === 'Undo') {
+      this._onUndo();
+    } else if (value === 'Redo') {
+      this._onRedo();
+    } else if (value === 'Next') {
       LogEvent('next_click');
       this.appState.endGameRound();
-    } else if (e.detail.value === 'Bust') {
+    } else if (value === 'Bust') {
       LogEvent('bust_click');
       this.appState.bustGameRound();
     } else {
-      LogEvent('dice_click', { value: e.detail.value });
-      this.appState.addGameRoll(e.detail.value);
+      this.appState.addGameRoll(value);
     }
   }
 
-  async _onUndo() {
-    if (this._confirmDialogOpen) return;
+  _handleKeyDown(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (this._confirmDialogOpen || this._addPlayerDialogOpen ||
+        this._editNameDialogOpen || this._editScoreDialogOpen) return;
+    // Covers dialogs app-view does not open itself, such as the language picker
+    if (e.composedPath().some(el => el.localName === 'dialog')) return;
 
-    const undoConfirmationMessage = this.appState.undoConfirmationMessage;
-    const message = undoConfirmationMessage || t('dialog.undoDefault');
+    const value = KEY_TO_DICE_VALUE[e.key.toLowerCase()];
+    if (!value) return;
 
-    const dialog = this.renderRoot?.querySelector('#confirm-dialog');
-    if (!dialog) return;
+    const enabled = value === 'Bust' ? this.appState.canBust
+                  : value === 'Next' ? this.appState.canNext
+                  : value === 'Undo' ? this.appState.canUndo
+                  : value === 'Redo' ? this.appState.canRedo
+                  : this.appState.canRoll;
+    if (!enabled) return;
 
-    this._confirmDialogOpen = true;
-    try {
-      const confirmed = await dialog.show({
-        title: '',
-        message,
-        confirmLabel: t('button.undo'),
-        cancelLabel: t('button.cancel'),
-        variant: 'primary',
-        showCancel: true,
-      });
+    e.preventDefault();
+    this._applyDiceValue(value);
+  }
 
-      if (confirmed) {
-        LogEvent('undo_click');
-        this.appState.undo();
-      }
-    } finally {
-      this._confirmDialogOpen = false;
+  _onUndo() {
+    LogEvent('undo_click');
+    this._showToast(this.appState.undo());
+  }
+
+  _onRedo() {
+    LogEvent('redo_click');
+    this._showToast(this.appState.redo());
+  }
+
+  _showToast(description) {
+    if (description) {
+      this.renderRoot?.querySelector('score-pad')?.showUndoToast(description);
     }
   }
 
@@ -157,7 +193,7 @@ class AppView extends LitElement {
 
       if (confirmed) {
         this.appState.clear();
-        LogEvent('reset_click');
+        LogEvent('reset_click', { locale: i18nStore.locale });
       }
     } finally {
       this._confirmDialogOpen = false;

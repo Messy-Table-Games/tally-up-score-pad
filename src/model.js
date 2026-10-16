@@ -14,8 +14,12 @@ function saveToStorage(data, storageKey) {
     return;
   }
 
-  const text = JSON.stringify(data);
-  localStorage.setItem(storageKey, text);
+  // A full or disabled storage loses persistence but must not break the game
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  } catch (err) {
+    console.warn(`Failed to save ${storageKey}: ${err}`);
+  }
 }
 
 /**
@@ -261,7 +265,9 @@ function RemovePlayer(game, playerId) {
 }
 
 /**
- * Maintains history for undo using a simple command pattern stack.
+ * Maintains history for undo/redo using a simple command pattern stack.
+ * Undone commands stay in storage above the head so they can be redone until a
+ * new command is executed.
  */
 class CommandStack {
   static MAX_LENGTH = 20;
@@ -270,6 +276,7 @@ class CommandStack {
     this.game = game;
     this._startIndex = 0;
     this._length = 0;
+    this._redoLength = 0;
     this._storagePrefix = storagePrefix;
     this.afterCallback = afterCallback;
 
@@ -284,18 +291,19 @@ class CommandStack {
 
     makeObservable(this, {
       _length: observable,
+      _redoLength: observable,
       canUndo: computed,
+      canRedo: computed,
     });
   }
 
   clear() {
-    const numItems = Math.max(this._length, CommandStack.MAX_LENGTH);
-
-    for (let n = this._startIndex; n < numItems; n++ ) {
+    for (let n = 0; n < CommandStack.MAX_LENGTH; n++) {
       this.deleteCommand(n);
-   }
+    }
 
    this._length = 0;
+   this._redoLength = 0;
    this._startIndex = 0;
 
    this.saveState();
@@ -323,23 +331,23 @@ class CommandStack {
     return this._length > 0;
   }
 
-  get undoConfirmationMessage() {
-    if (this._length < 1) {
-      return '';
-    }
-
-    try {
-      const cmdIndex = this.getHeadIndex();
-      const command = this.loadCommand(cmdIndex);
-      return command?.undoConfirmationMessage || null;
-    } catch (err) {
-      //console.warn(`Error occurred getting undo description: ${err}`);
-      return '';
-    }
+  get canRedo() {
+    return this._redoLength > 0;
   }
-  
+
+  // Localized description of what a command did, e.g. "Undid roll of 70"
+  describe(prefix, command) {
+    const d = command?.description;
+    return d ? t(`${prefix}.${d.key}`, d.vars) : null;
+  }
+
   execute(command) {
     command.execute();
+
+    for (let n = 0; n < this._redoLength; n++) {
+      this.deleteCommand((this._startIndex + this._length + n) % CommandStack.MAX_LENGTH);
+    }
+    this._redoLength = 0;
 
     const nextIndex = this.getNextIndexAndUpdate();
     this.saveCommand(nextIndex, command);
@@ -349,24 +357,58 @@ class CommandStack {
 
   undo() {
     if (this._length < 1) 
-      return;
+      return null;
 
     const cmdIndex = this.getHeadIndex();
     //console.log(`undo: cmdIndex = ${cmdIndex}`);
     try {
       const command = this.loadCommand(cmdIndex);
-      this.deleteCommand(cmdIndex);
       this._length--;
 
+      // Describe before undoing so values reflect the state the action produced
+      const description = this.describe('undo', command);
       if (command) {
         command.undo();
+        // Re-save since undo can update command state needed by redo
+        this.saveCommand(cmdIndex, command);
+        this._redoLength++;
+      } else {
+        this.deleteCommand(cmdIndex);
       }
 
       this.afterCallback?.();
       this.saveState();
+      return description;
     } catch (err) {
       console.warn(`Error occurred during undo: ${err}`);
       this.clear();
+      return null;
+    }
+  }
+
+  redo() {
+    if (this._redoLength < 1)
+      return null;
+
+    const cmdIndex = (this._startIndex + this._length) % CommandStack.MAX_LENGTH;
+    try {
+      const command = this.loadCommand(cmdIndex);
+      if (!command) {
+        throw new Error('Redo command could not be loaded');
+      }
+
+      command.redo();
+      this._length++;
+      this._redoLength--;
+
+      this.afterCallback?.();
+      this.saveState();
+      // Describe after redoing so values reflect the state the action produced
+      return this.describe('redo', command);
+    } catch (err) {
+      console.warn(`Error occurred during redo: ${err}`);
+      this.clear();
+      return null;
     }
   }
 
@@ -414,15 +456,25 @@ class CommandStack {
     //console.log(`startIndex: ${this._startIndex}, length: ${this._length}`);
     return {
       startIndex: this._startIndex,
-      length: this._length
+      length: this._length,
+      redoLength: this._redoLength
     };
   }
 
   deserialize(data, game) {
     //console.log('deserializing command stack');
     //console.log(`startIndex: ${data.startIndex}, length: ${data.length}`);
-    this._startIndex = data.startIndex;
-    this._length = data.length;
+    const { startIndex, length, redoLength = 0 } = data;
+    const isCount = n => Number.isInteger(n) && n >= 0 && n <= CommandStack.MAX_LENGTH;
+    if (!isCount(startIndex) || startIndex >= CommandStack.MAX_LENGTH ||
+        !isCount(length) || !isCount(redoLength) ||
+        length + redoLength > CommandStack.MAX_LENGTH) {
+      throw new Error(`Invalid command stack: ${JSON.stringify(data)}`);
+    }
+
+    this._startIndex = startIndex;
+    this._length = length;
+    this._redoLength = redoLength;
   }
 }
 
@@ -498,7 +550,9 @@ export class AppState {
       bustGameRound: action,
       endGameRound: action,
       undo: action,
+      redo: action,
       canUndo: computed,
+      canRedo: computed,
       canBust: computed,
       canNext: computed,
       canRoll: computed
@@ -549,6 +603,10 @@ export class AppState {
   }
 
   removePlayer(playerId) {
+    if (!this.game.players.some(p => p.id === playerId)) {
+      return;
+    }
+
     const command = new RemovePlayerCommand(this.game, playerId);
     this._commandStack.execute(command);
   }
@@ -600,15 +658,19 @@ export class AppState {
   }
 
   undo() {
-    this._commandStack.undo();
+    return this._commandStack.undo();
+  }
+
+  redo() {
+    return this._commandStack.redo();
   }
 
   get canUndo() {
     return this._commandStack.canUndo;
   }
 
-  get undoConfirmationMessage() {
-    return this._commandStack.undoConfirmationMessage;
+  get canRedo() {
+    return this._commandStack.canRedo;
   }
 
   get canBust() {
@@ -654,9 +716,9 @@ export class AddPlayerCommand {
     AddPlayer(this.game, this.player, this.playerIndex);
   }
 
-  get undoConfirmationMessage() {
-    if (!this.player?.name) return t('undo.addPlayerUnknown');
-    return t('undo.addPlayer', { name: this.player.name });
+  get description() {
+    if (!this.player?.name) return { key: 'addPlayerUnknown' };
+    return { key: 'addPlayer', vars: { name: this.player.name } };
   }
 
   serialize() {
@@ -664,14 +726,20 @@ export class AddPlayerCommand {
       type: AddPlayerCommand.name,
       data: {
         playerId: this.player?.id,
-        playerIndex: this.playerIndex
+        playerIndex: this.playerIndex,
+        player: this.player?.serialize()
       }
     };
   }
 
   static deserialize(data, game) {
-    const player = game.players.find(p => p.id === data.playerId);
-    if (!player) return null;
+    // The player is not in the game when this command has been undone
+    let player = game.players.find(p => p.id === data.playerId);
+    if (!player) {
+      if (!data.player) return null;
+      player = new Player();
+      player.deserialize(data.player);
+    }
 
     const cmd = new AddPlayerCommand(game);
     cmd.player = player;
@@ -714,9 +782,9 @@ export class RemovePlayerCommand {
     }
   }
 
-  get undoConfirmationMessage() {
-    if (!this.player?.name) return t('undo.deletePlayerUnknown');
-    return t('undo.deletePlayer', { name: this.player.name });
+  get description() {
+    if (!this.player?.name) return { key: 'deletePlayerUnknown' };
+    return { key: 'deletePlayer', vars: { name: this.player.name } };
   }
 
   serialize() {
@@ -767,8 +835,8 @@ export class ChangePlayerNameCommand {
     this.execute();
   }
 
-  get undoConfirmationMessage() {
-    return t('undo.renamePlayer', { name: this.newName });
+  get description() {
+    return { key: 'renamePlayer', vars: { name: this.newName } };
   }
 
   serialize() {
@@ -818,10 +886,10 @@ export class ChangePlayerStatusCommand {
     this.execute();
   }
 
-  get undoConfirmationMessage() {
+  get description() {
     const status = t('status.' + this.newStatus);
-    if (!this.player?.name) return t('undo.setStatusUnknown', { status });
-    return t('undo.setStatus', { name: this.player.name, status });
+    if (!this.player?.name) return { key: 'setStatusUnknown', vars: { status } };
+    return { key: 'setStatus', vars: { name: this.player.name, status } };
   }
 
   serialize() {
@@ -871,8 +939,8 @@ export class SetPendingScoreCommand {
     this.execute();
   }
 
-  get undoConfirmationMessage() {
-    return ''; // never shown to user because this command is called internally
+  get description() {
+    return null; // never shown to user because this command is called internally
   }
 
   serialize() {
@@ -923,8 +991,8 @@ export class BankPendingScoreCommand {
     this.execute();
   }
 
-  get undoConfirmationMessage() {
-    return ''; // never shown to user because this command is called internally
+  get description() {
+    return null; // never shown to user because this command is called internally
   }
 
   serialize() {
@@ -985,8 +1053,8 @@ export class TallyUpCommand {
     this.game.rolls.push('TUP!');
   }
 
-  get undoConfirmationMessage() {
-    return t('undo.tallyUp');
+  get description() {
+    return { key: 'tallyUp' };
   }
 
   serialize() {
@@ -1034,9 +1102,9 @@ export class AddScoreCommand {
     this.execute();
   }
 
-  get undoConfirmationMessage() {
-    if (!this.player?.name) return t('undo.setScoreUnknown');
-    return t('undo.setScore', { name: this.player.name, score: this.player.pendingTotalScore });
+  get description() {
+    if (!this.player?.name) return { key: 'setScoreUnknown' };
+    return { key: 'setScore', vars: { name: this.player.name, score: this.player.pendingTotalScore } };
   }
 
   serialize() {
@@ -1092,8 +1160,8 @@ export class AddGameRollCommand {
     this.commands.redoAll();
   }
 
-  get undoConfirmationMessage() {
-    return t('undo.diceRoll', { value: this.roll });
+  get description() {
+    return { key: 'diceRoll', vars: { value: this.roll } };
   }
 
   serialize() {
@@ -1155,8 +1223,8 @@ export class EndRoundCommand {
     this.game.rolls.length = 0;
   }
 
-  get undoConfirmationMessage() {
-    return t('undo.next');
+  get description() {
+    return { key: 'next' };
   }
 
   serialize() {
@@ -1211,8 +1279,8 @@ export class BustRoundCommand {
     this.commands.redoAll();
   }
 
-  get undoConfirmationMessage() {
-    return t('undo.bust');
+  get description() {
+    return { key: 'bust' };
   }
 
   serialize() {
