@@ -22,7 +22,7 @@ npm install
 
 ## Analytics
 
-Set the environment variable TUPSP_INCLUDE_SA to true to include the Simple Analytics script in index.ejs for production. The default is false if the environment variable is not defined.
+Set the environment variable TUPSP_INCLUDE_SA to true to include the Simple Analytics script in index.ejs for production. The default is false if the environment variable is not defined. It can come from the environment or from a gitignored `.env` at the root; the environment wins.
 
 ## Build Number
 

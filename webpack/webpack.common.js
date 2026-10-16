@@ -16,7 +16,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: 'src/index.ejs',
       templateParameters: {
-        TUPSP_INCLUDE_SA: !!process.env.TUPSP_INCLUDE_SA
+        TUPSP_INCLUDE_SA: process.env.TUPSP_INCLUDE_SA === 'true'
       }
     }),
     new GenerateBuildTxtFilePlugin(),
