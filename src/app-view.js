@@ -6,26 +6,6 @@ import './confirm-dialog.js';
 import { LogEvent } from './log-event.js';
 import { i18nStore, t } from './i18n.js';
 
-const KEY_TO_DICE_VALUE = {
-  '1': '10',
-  '2': '20',
-  '3': '30',
-  '4': '40',
-  '5': '50',
-  '6': '60',
-  '7': '70',
-  '0': '100',
-  '+': '100',
-  '-': '-100',
-  '*': 'x2',
-  b: 'Bust',
-  n: 'Next',
-  u: 'Undo',
-  arrowleft: 'Undo',
-  r: 'Redo',
-  arrowright: 'Redo',
-};
-
 class AppView extends LitElement {
   static properties = {
     appState: { type: Object },
@@ -72,14 +52,12 @@ class AppView extends LitElement {
     this._addPlayerDialogOpen = false;
     this._editNameDialogOpen = false;
     this._editScoreDialogOpen = false;
-    this._handleKeyDown = this._handleKeyDown.bind(this);
   }
 
   connectedCallback() {
     super.connectedCallback();
 
     this.addEventListener('dice-button-click', this._onDiceButtonClick);
-    window.addEventListener('keydown', this._handleKeyDown);
     this.addEventListener('undo-click', this._onUndo);
     this.addEventListener('reset-click', this._onReset);
     this.addEventListener('add-player-click', this._onAddPlayer);
@@ -91,7 +69,6 @@ class AppView extends LitElement {
 
   disconnectedCallback() {
     this.removeEventListener('dice-button-click', this._onDiceButtonClick);
-    window.removeEventListener('keydown', this._handleKeyDown);
     this.removeEventListener('undo-click', this._onUndo);
     this.removeEventListener('reset-click', this._onReset);
     this.removeEventListener('add-player-click', this._onAddPlayer);
@@ -118,10 +95,7 @@ class AppView extends LitElement {
   }
 
   _onDiceButtonClick(e) {
-    this._applyDiceValue(e.detail.value);
-  }
-
-  _applyDiceValue(value) {
+    const { value } = e.detail;
     if (value === 'Undo') {
       this._onUndo();
     } else if (value === 'Redo') {
@@ -135,27 +109,6 @@ class AppView extends LitElement {
     } else {
       this.appState.addGameRoll(value);
     }
-  }
-
-  _handleKeyDown(e) {
-    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-    if (this._confirmDialogOpen || this._addPlayerDialogOpen ||
-        this._editNameDialogOpen || this._editScoreDialogOpen) return;
-    // Covers dialogs app-view does not open itself, such as the language picker
-    if (e.composedPath().some(el => el.localName === 'dialog')) return;
-
-    const value = KEY_TO_DICE_VALUE[e.key.toLowerCase()];
-    if (!value) return;
-
-    const enabled = value === 'Bust' ? this.appState.canBust
-                  : value === 'Next' ? this.appState.canNext
-                  : value === 'Undo' ? this.appState.canUndo
-                  : value === 'Redo' ? this.appState.canRedo
-                  : this.appState.canRoll;
-    if (!enabled) return;
-
-    e.preventDefault();
-    this._applyDiceValue(value);
   }
 
   _onUndo() {
